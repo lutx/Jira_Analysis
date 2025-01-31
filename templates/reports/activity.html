@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Raporty Aktywności - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Raporty Aktywności</h2>
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="reportType" class="form-label">Typ raportu</label>
+                    <select class="form-select" id="reportType">
+                        <option value="daily">Dzienny</option>
+                        <option value="weekly">Tygodniowy</option>
+                        <option value="monthly">Miesięczny</option>
+                    </select>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="activityTable">
+                        <thead>
+                            <tr>
+                                <th>Użytkownik</th>
+                                <th>Okres</th>
+                                <th>Godziny</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dane będą dodane przez JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" id="exportPDF">Eksportuj do PDF</button>
+                    <button class="btn btn-secondary" id="exportCSV">Eksportuj do CSV</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/reports/activity.js"></script>
+{% endblock %} 

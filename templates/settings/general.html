@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Ustawienia ogólne - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ustawienia ogólne</h5>
+            </div>
+            <div class="card-body">
+                <form id="generalSettingsForm" onsubmit="saveGeneralSettings(event)">
+                    <div class="mb-3">
+                        <label for="appName" class="form-label">Nazwa aplikacji</label>
+                        <input type="text" class="form-control" id="appName" name="appName">
+                    </div>
+                    <div class="mb-3">
+                        <label for="defaultTimeZone" class="form-label">Strefa czasowa</label>
+                        <select class="form-select" id="defaultTimeZone" name="defaultTimeZone">
+                            <option value="Europe/Warsaw">Europe/Warsaw</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableNotifications" name="enableNotifications">
+                            <label class="form-check-label" for="enableNotifications">
+                                Włącz powiadomienia
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Zapisz ustawienia</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/settings/general.js"></script>
+{% endblock %} 

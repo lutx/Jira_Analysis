@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Backup/Restore - Panel Admina{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Backup -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Backup bazy danych</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Ostatni backup</label>
+                            <p id="lastBackupInfo" class="form-text">
+                                Ładowanie informacji...
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-primary" onclick="createBackup()">
+                            <i class="bi bi-download"></i> Utwórz backup
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive mt-3">
+                    <table class="table table-striped" id="backupsTable">
+                        <thead>
+                            <tr>
+                                <th>Data utworzenia</th>
+                                <th>Rozmiar</th>
+                                <th>Utworzony przez</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Lista backupów będzie dodana przez JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Przywracanie bazy danych</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Uwaga!</strong> Przywrócenie backupu spowoduje nadpisanie wszystkich obecnych danych.
+                </div>
+                
+                <form id="restoreForm" class="mt-3">
+                    <div class="mb-3">
+                        <label for="backupFile" class="form-label">Wybierz plik backupu</label>
+                        <input type="file" class="form-control" id="backupFile" accept=".sql,.gz">
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-arrow-counterclockwise"></i> Przywróć backup
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal potwierdzenia -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Potwierdź operację</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">Potwierdź</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/admin/backup.js"></script>
+{% endblock %} 

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Import Danych - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Import Danych</h2>
+        <div class="card">
+            <div class="card-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="upload-area mb-3">
+                        <div class="mb-3">
+                            <label for="importFile" class="form-label">Wybierz plik do importu</label>
+                            <input type="file" class="form-control" id="importFile" accept=".csv,.xlsx">
+                            <div class="form-text">Obsługiwane formaty: CSV, XLSX (max 5MB)</div>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="importType" class="form-label">Typ importu</label>
+                            <select class="form-select" id="importType" required>
+                                <option value="worklogs">Logi pracy</option>
+                                <option value="users">Użytkownicy</option>
+                                <option value="portfolios">Portfolia</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Importuj dane
+                        </button>
+                    </div>
+                </form>
+                <div id="importStatus" class="mt-3">
+                    <!-- Status importu będzie dodany przez JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/settings/import.js"></script>
+{% endblock %} 

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Nie znaleziono{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <h1 class="display-1">404</h1>
+            <h2>Strona nie została znaleziona</h2>
+            <p class="lead">Przepraszamy, ale strona której szukasz nie istnieje lub została przeniesiona.</p>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                <i class="bi bi-house-door"></i> Wróć do strony głównej
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

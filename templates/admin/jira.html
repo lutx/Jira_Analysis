@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Konfiguracja Jira - Panel Admina{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Konfiguracja połączenia z Jirą</h5>
+            </div>
+            <div class="card-body">
+                <form id="jiraConfigForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="jiraUrl" class="form-label">URL Jiry</label>
+                                <input type="url" class="form-control" id="jiraUrl" required 
+                                       placeholder="https://twoja-firma.atlassian.net">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="jiraUser" class="form-label">Email użytkownika</label>
+                                <input type="email" class="form-control" id="jiraUser" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="jiraToken" class="form-label">Token API</label>
+                                <input type="password" class="form-control" id="jiraToken" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-primary" id="testConnection">
+                                    <i class="bi bi-check-circle"></i> Testuj połączenie
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Zapisz konfigurację
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Narzędzia testowe Jira API</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Projekty</h6>
+                                <button class="btn btn-outline-primary btn-sm" onclick="testJiraProjects()">
+                                    <i class="bi bi-folder"></i> Pobierz projekty
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Użytkownicy</h6>
+                                <button class="btn btn-outline-primary btn-sm" onclick="testJiraUsers()">
+                                    <i class="bi bi-people"></i> Pobierz użytkowników
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Worklogi</h6>
+                                <button class="btn btn-outline-primary btn-sm" onclick="testJiraWorklogs()">
+                                    <i class="bi bi-clock-history"></i> Pobierz worklogi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Wyniki testu:</h6>
+                    <pre id="testResults" class="bg-light p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Tutaj będą wyświetlane wyniki testów -->
+                    </pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/admin/jira.js"></script>
+{% endblock %} 

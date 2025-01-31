@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Ustawienia systemu - Panel Admina{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Ustawienia systemowe</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-box"></i> Konfiguracja Jira
+                                </h6>
+                                <p class="card-text">Zarządzaj połączeniem z Jira API</p>
+                                <a href="/admin/jira" class="btn btn-outline-primary btn-sm">
+                                    Konfiguruj Jira
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-people"></i> Użytkownicy
+                                </h6>
+                                <p class="card-text">Zarządzaj użytkownikami i uprawnieniami</p>
+                                <a href="/admin/users" class="btn btn-outline-primary btn-sm">
+                                    Zarządzaj użytkownikami
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-journal-text"></i> Logi systemowe
+                                </h6>
+                                <p class="card-text">Przeglądaj logi i historię zdarzeń</p>
+                                <a href="/admin/logs" class="btn btn-outline-primary btn-sm">
+                                    Zobacz logi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="bi bi-cloud-arrow-up"></i> Backup/Restore
+                                </h6>
+                                <p class="card-text">Zarządzaj kopiami zapasowymi systemu</p>
+                                <a href="/admin/backup" class="btn btn-outline-primary btn-sm">
+                                    Zarządzaj backupami
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ustawienia aplikacji</h5>
+            </div>
+            <div class="card-body">
+                <form id="appSettingsForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="appName" class="form-label">Nazwa aplikacji</label>
+                                <input type="text" class="form-control" id="appName" name="appName">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="defaultTimeZone" class="form-label">Domyślna strefa czasowa</label>
+                                <select class="form-select" id="defaultTimeZone" name="defaultTimeZone">
+                                    <option value="Europe/Warsaw">Europe/Warsaw</option>
+                                    <option value="UTC">UTC</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="logLevel" class="form-label">Poziom logowania</label>
+                                <select class="form-select" id="logLevel" name="logLevel">
+                                    <option value="DEBUG">DEBUG</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="WARNING">WARNING</option>
+                                    <option value="ERROR">ERROR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="logRetention" class="form-label">Okres przechowywania logów (dni)</label>
+                                <input type="number" class="form-control" id="logRetention" name="logRetention" min="1" max="365">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableNotifications" name="enableNotifications">
+                            <label class="form-check-label" for="enableNotifications">
+                                Włącz powiadomienia systemowe
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Zapisz ustawienia
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Synchronizacja użytkowników Jira</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <button class="btn btn-outline-primary" onclick="testJiraConnection()">
+                        <i class="bi bi-plug"></i> Testuj połączenie
+                    </button>
+                </div>
+                <p>Ostatnia synchronizacja: <span id="lastSyncTime">-</span></p>
+                <button class="btn btn-primary" onclick="syncJiraUsers()">
+                    <i class="bi bi-arrow-repeat"></i> Synchronizuj użytkowników
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/admin/settings.js"></script>
+{% endblock %} 

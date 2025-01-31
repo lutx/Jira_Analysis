@@ -1,0 +1,101 @@
+user_name,role,team,project,task,hours,date
+adam.kaczmarek,Developer,Backend,PROJ-2: Mobile App,Documentation,6,2025-01-13
+maria.dabrowska,Developer,Mobile,PROJ-3: CRM System,Code Review,5,2025-01-22
+piotr.wisniewski,QA,Testing,PROJ-3: CRM System,Manual Testing,7,2025-01-10
+piotr.wisniewski,QA,Testing,PROJ-2: Mobile App,Manual Testing,6,2025-01-06
+piotr.wisniewski,QA,Testing,PROJ-3: CRM System,Test Case Creation,7,2025-01-23
+maria.dabrowska,Developer,Mobile,PROJ-4: Analytics Dashboard,Code Review,7,2025-01-27
+zofia.zielinska,Developer,Frontend,PROJ-2: Mobile App,Code Review,6,2025-01-15
+ewa.wojcik,QA,Testing,PROJ-4: Analytics Dashboard,Manual Testing,4,2025-01-17
+adam.kaczmarek,Developer,Backend,PROJ-3: CRM System,Bug Fix,7,2025-01-08
+ewa.wojcik,QA,Testing,PROJ-3: CRM System,Test Case Creation,5,2025-01-27
+tomasz.lewandowski,PM,Management,PROJ-5: API Integration,Team Meeting,5,2025-01-10
+jan.kowalski,Developer,Backend,PROJ-5: API Integration,Documentation,6,2025-01-20
+jan.kowalski,Developer,Backend,PROJ-2: Mobile App,Documentation,8,2025-01-10
+tomasz.lewandowski,PM,Management,PROJ-5: API Integration,Documentation,6,2025-01-02
+tomasz.lewandowski,PM,Management,PROJ-3: CRM System,Documentation,6,2024-12-31
+adam.kaczmarek,Developer,Backend,PROJ-2: Mobile App,Bug Fix,6,2025-01-15
+zofia.zielinska,Developer,Frontend,PROJ-5: API Integration,Implementation,7,2025-01-06
+adam.kaczmarek,Developer,Backend,PROJ-1: E-commerce Platform,Code Review,5,2025-01-09
+jan.kowalski,Developer,Backend,PROJ-2: Mobile App,Documentation,8,2025-01-08
+zofia.zielinska,Developer,Frontend,PROJ-1: E-commerce Platform,Refactoring,6,2025-01-03
+anna.nowak,Developer,Frontend,PROJ-2: Mobile App,Bug Fix,4,2025-01-27
+ewa.wojcik,QA,Testing,PROJ-5: API Integration,Test Case Creation,5,2025-01-20
+jan.kowalski,Developer,Backend,PROJ-2: Mobile App,Refactoring,6,2025-01-07
+maria.dabrowska,Developer,Mobile,PROJ-3: CRM System,Documentation,7,2025-01-06
+anna.nowak,Developer,Frontend,PROJ-5: API Integration,Bug Fix,5,2025-01-13
+anna.nowak,Developer,Frontend,PROJ-4: Analytics Dashboard,Implementation,6,2025-01-02
+tomasz.lewandowski,PM,Management,PROJ-4: Analytics Dashboard,Resource Planning,4,2025-01-13
+jan.kowalski,Developer,Backend,PROJ-3: CRM System,Refactoring,7,2025-01-30
+adam.kaczmarek,Developer,Backend,PROJ-2: Mobile App,Refactoring,4,2025-01-02
+maria.dabrowska,Developer,Mobile,PROJ-5: API Integration,Bug Fix,6,2024-12-31
+tomasz.lewandowski,PM,Management,PROJ-1: E-commerce Platform,Documentation,8,2025-01-06
+maria.dabrowska,Developer,Mobile,PROJ-1: E-commerce Platform,Bug Fix,4,2025-01-06
+anna.nowak,Developer,Frontend,PROJ-2: Mobile App,Bug Fix,5,2025-01-28
+zofia.zielinska,Developer,Frontend,PROJ-5: API Integration,Bug Fix,5,2025-01-23
+adam.kaczmarek,Developer,Backend,PROJ-4: Analytics Dashboard,Code Review,4,2025-01-28
+maria.dabrowska,Developer,Mobile,PROJ-2: Mobile App,Code Review,4,2025-01-09
+ewa.wojcik,QA,Testing,PROJ-3: CRM System,Automated Testing,4,2024-12-31
+zofia.zielinska,Developer,Frontend,PROJ-3: CRM System,Refactoring,4,2025-01-30
+ewa.wojcik,QA,Testing,PROJ-4: Analytics Dashboard,Bug Reporting,6,2025-01-06
+anna.nowak,Developer,Frontend,PROJ-2: Mobile App,Documentation,7,2025-01-23
+maria.dabrowska,Developer,Mobile,PROJ-1: E-commerce Platform,Implementation,5,2025-01-01
+maria.dabrowska,Developer,Mobile,PROJ-4: Analytics Dashboard,Refactoring,4,2024-12-31
+anna.nowak,Developer,Frontend,PROJ-4: Analytics Dashboard,Code Review,5,2025-01-08
+jan.kowalski,Developer,Backend,PROJ-3: CRM System,Bug Fix,6,2025-01-09
+jan.kowalski,Developer,Backend,PROJ-5: API Integration,Bug Fix,4,2025-01-06
+adam.kaczmarek,Developer,Backend,PROJ-2: Mobile App,Bug Fix,5,2025-01-16
+ewa.wojcik,QA,Testing,PROJ-1: E-commerce Platform,Automated Testing,8,2025-01-30
+maria.dabrowska,Developer,Mobile,PROJ-2: Mobile App,Refactoring,6,2025-01-09
+maria.dabrowska,Developer,Mobile,PROJ-3: CRM System,Refactoring,4,2025-01-13
+tomasz.lewandowski,PM,Management,PROJ-2: Mobile App,Resource Planning,5,2025-01-14
+anna.nowak,Developer,Frontend,PROJ-4: Analytics Dashboard,Code Review,7,2025-01-10
+jan.kowalski,Developer,Backend,PROJ-4: Analytics Dashboard,Bug Fix,8,2025-01-02
+zofia.zielinska,Developer,Frontend,PROJ-5: API Integration,Documentation,8,2024-12-31
+tomasz.lewandowski,PM,Management,PROJ-4: Analytics Dashboard,Client Meeting,4,2025-01-20
+tomasz.lewandowski,PM,Management,PROJ-3: CRM System,Sprint Planning,5,2025-01-07
+adam.kaczmarek,Developer,Backend,PROJ-1: E-commerce Platform,Documentation,7,2025-01-06
+adam.kaczmarek,Developer,Backend,PROJ-5: API Integration,Refactoring,4,2025-01-06
+maria.dabrowska,Developer,Mobile,PROJ-3: CRM System,Bug Fix,7,2025-01-01
+maria.dabrowska,Developer,Mobile,PROJ-2: Mobile App,Refactoring,6,2025-01-27
+jan.kowalski,Developer,Backend,PROJ-2: Mobile App,Refactoring,5,2025-01-02
+maria.dabrowska,Developer,Mobile,PROJ-2: Mobile App,Implementation,4,2025-01-16
+piotr.wisniewski,QA,Testing,PROJ-3: CRM System,Bug Reporting,8,2025-01-27
+maria.dabrowska,Developer,Mobile,PROJ-2: Mobile App,Bug Fix,7,2025-01-06
+ewa.wojcik,QA,Testing,PROJ-4: Analytics Dashboard,Bug Reporting,8,2025-01-06
+anna.nowak,Developer,Frontend,PROJ-3: CRM System,Bug Fix,4,2025-01-10
+ewa.wojcik,QA,Testing,PROJ-1: E-commerce Platform,Manual Testing,5,2025-01-27
+zofia.zielinska,Developer,Frontend,PROJ-5: API Integration,Implementation,7,2025-01-13
+zofia.zielinska,Developer,Frontend,PROJ-5: API Integration,Documentation,8,2025-01-23
+ewa.wojcik,QA,Testing,PROJ-4: Analytics Dashboard,Manual Testing,6,2025-01-28
+adam.kaczmarek,Developer,Backend,PROJ-4: Analytics Dashboard,Bug Fix,5,2024-12-31
+anna.nowak,Developer,Frontend,PROJ-1: E-commerce Platform,Refactoring,4,2025-01-27
+jan.kowalski,Developer,Backend,PROJ-5: API Integration,Bug Fix,5,2025-01-20
+ewa.wojcik,QA,Testing,PROJ-2: Mobile App,Manual Testing,8,2025-01-27
+tomasz.lewandowski,PM,Management,PROJ-1: E-commerce Platform,Resource Planning,4,2025-01-13
+ewa.wojcik,QA,Testing,PROJ-2: Mobile App,Regression Testing,4,2025-01-20
+ewa.wojcik,QA,Testing,PROJ-4: Analytics Dashboard,Automated Testing,5,2025-01-20
+maria.dabrowska,Developer,Mobile,PROJ-5: API Integration,Documentation,8,2025-01-02
+maria.dabrowska,Developer,Mobile,PROJ-2: Mobile App,Refactoring,7,2025-01-24
+anna.nowak,Developer,Frontend,PROJ-1: E-commerce Platform,Bug Fix,8,2025-01-10
+adam.kaczmarek,Developer,Backend,PROJ-3: CRM System,Bug Fix,4,2025-01-21
+ewa.wojcik,QA,Testing,PROJ-1: E-commerce Platform,Test Case Creation,7,2025-01-10
+adam.kaczmarek,Developer,Backend,PROJ-4: Analytics Dashboard,Implementation,4,2025-01-20
+adam.kaczmarek,Developer,Backend,PROJ-3: CRM System,Code Review,7,2025-01-27
+maria.dabrowska,Developer,Mobile,PROJ-4: Analytics Dashboard,Bug Fix,4,2025-01-13
+jan.kowalski,Developer,Backend,PROJ-3: CRM System,Implementation,4,2025-01-06
+adam.kaczmarek,Developer,Backend,PROJ-2: Mobile App,Implementation,5,2025-01-02
+anna.nowak,Developer,Frontend,PROJ-4: Analytics Dashboard,Bug Fix,8,2025-01-20
+zofia.zielinska,Developer,Frontend,PROJ-1: E-commerce Platform,Code Review,6,2025-01-02
+piotr.wisniewski,QA,Testing,PROJ-1: E-commerce Platform,Regression Testing,7,2025-01-06
+tomasz.lewandowski,PM,Management,PROJ-4: Analytics Dashboard,Team Meeting,7,2025-01-27
+zofia.zielinska,Developer,Frontend,PROJ-5: API Integration,Refactoring,6,2025-01-16
+tomasz.lewandowski,PM,Management,PROJ-4: Analytics Dashboard,Documentation,5,2025-01-08
+jan.kowalski,Developer,Backend,PROJ-3: CRM System,Bug Fix,4,2025-01-08
+zofia.zielinska,Developer,Frontend,PROJ-4: Analytics Dashboard,Refactoring,4,2025-01-03
+jan.kowalski,Developer,Backend,PROJ-1: E-commerce Platform,Bug Fix,4,2025-01-30
+tomasz.lewandowski,PM,Management,PROJ-5: API Integration,Sprint Planning,8,2025-01-17
+piotr.wisniewski,QA,Testing,PROJ-1: E-commerce Platform,Bug Reporting,5,2025-01-13
+jan.kowalski,Developer,Backend,PROJ-1: E-commerce Platform,Bug Fix,8,2025-01-24
+jan.kowalski,Developer,Backend,PROJ-5: API Integration,Implementation,4,2025-01-06
+anna.nowak,Developer,Frontend,PROJ-4: Analytics Dashboard,Implementation,8,2025-01-13

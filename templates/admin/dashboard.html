@@ -1,0 +1,168 @@
+{% extends "admin/base_admin.html" %}
+
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <!-- Statystyki -->
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-people fs-1 text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Użytkownicy</h6>
+                        <h3 class="mb-0" id="usersCount">...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-clock-history fs-1 text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Worklogi dziś</h6>
+                        <h3 class="mb-0" id="worklogsCount">...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-exclamation-triangle fs-1 text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Błędy (24h)</h6>
+                        <h3 class="mb-0" id="errorsCount">...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-hdd fs-1 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="text-muted mb-0">Rozmiar DB</h6>
+                        <h3 class="mb-0" id="dbSize">...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ostatnie aktywności -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-activity me-2"></i>
+                        Ostatnie aktywności
+                    </h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadRecentActivities()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="activitiesTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Użytkownik</th>
+                                <th>Akcja</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="3" class="text-center">Ładowanie...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ostatnie błędy -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bug me-2"></i>
+                        Ostatnie błędy
+                    </h5>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadRecentErrors()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="errorsTable">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Moduł</th>
+                                <th>Błąd</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="3" class="text-center">Ładowanie...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wykresy -->
+    <div class="col-12 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Statystyki systemu
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="worklogsChart"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <canvas id="errorsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_js %}
+<script src="/static/admin/dashboard.js"></script>
+{% endblock %} 

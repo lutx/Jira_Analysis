@@ -1,0 +1,142 @@
+{% extends "admin/base_admin.html" %}
+
+{% block breadcrumb %}Zarządzanie Rolami{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Zarządzanie Rolami</h1>
+                <button class="btn btn-primary" onclick="showAddRoleModal()">
+                    <i class="bi bi-plus-circle"></i> Dodaj Rolę
+                </button>
+            </div>
+
+            <!-- Lista ról -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="rolesTable">
+                            <thead>
+                                <tr>
+                                    <th>Nazwa</th>
+                                    <th>Opis</th>
+                                    <th>Typ</th>
+                                    <th>Data utworzenia</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rolesTableBody">
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Przypisania ról -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5>Przypisania Ról</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <button class="btn btn-success" onclick="showAssignRoleModal()">
+                            <i class="bi bi-person-plus"></i> Przypisz Rolę
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="assignmentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Email</th>
+                                    <th>Rola</th>
+                                    <th>Przypisano przez</th>
+                                    <th>Data przypisania</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentsTableBody">
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania/edycji roli -->
+<div class="modal fade" id="roleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleModalTitle">Dodaj Rolę</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="roleForm">
+                    <input type="hidden" id="roleId">
+                    <div class="mb-3">
+                        <label for="roleName" class="form-label">Nazwa roli*</label>
+                        <input type="text" class="form-control" id="roleName" required>
+                        <div class="invalid-feedback">Nazwa roli jest wymagana</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleDescription" class="form-label">Opis</label>
+                        <textarea class="form-control" id="roleDescription" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="saveRole()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal przypisywania roli -->
+<div class="modal fade" id="assignRoleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Przypisz Rolę</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="assignRoleForm">
+                    <div class="mb-3">
+                        <label for="userSelect" class="form-label">Użytkownik*</label>
+                        <select class="form-select" id="userSelect" required>
+                            <option value="">Wybierz użytkownika...</option>
+                        </select>
+                        <div class="invalid-feedback">Wybierz użytkownika</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roleSelect" class="form-label">Rola*</label>
+                        <select class="form-select" id="roleSelect" required>
+                            <option value="">Wybierz rolę...</option>
+                        </select>
+                        <div class="invalid-feedback">Wybierz rolę</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="assignRole()">Przypisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Dodaj SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Dodaj roles.js -->
+<script src="{{ url_for('static', filename='admin/roles.js') }}"></script>
+{% endblock %} 

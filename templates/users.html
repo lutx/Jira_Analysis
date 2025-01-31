@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Użytkownicy - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Lista użytkowników</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>Nazwa użytkownika</th>
+                                <th>Rola</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dane będą dodane przez JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/users.js"></script>
+{% endblock %} 

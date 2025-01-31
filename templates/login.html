@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Logowanie - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card mt-5">
+            <div class="card-body">
+                <h2 class="text-center mb-4">Logowanie</h2>
+                <div id="loginError" class="alert alert-danger d-none">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span id="errorMessage"></span>
+                </div>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="user_name" class="form-label">Login</label>
+                        <input type="text" class="form-control" id="user_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Hasło</label>
+                        <input type="password" class="form-control" id="password" required>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember_me">
+                        <label class="form-check-label" for="remember_me">Zapamiętaj mnie</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-box-arrow-in-right"></i> Zaloguj
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const errorMessage = document.getElementById('errorMessage');
+
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        loginError.classList.add('d-none');
+        
+        const userData = {
+            user_name: document.getElementById('user_name').value,
+            password: document.getElementById('password').value,
+            remember_me: document.getElementById('remember_me').checked
+        };
+        
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                errorMessage.textContent = data.error || 'Błąd logowania';
+                loginError.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            errorMessage.textContent = 'Wystąpił błąd podczas logowania';
+            loginError.classList.remove('d-none');
+        }
+    });
+});
+</script>
+{% endblock %} 

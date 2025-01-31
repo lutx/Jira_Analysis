@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolia - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Portfolia</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#portfolioModal">
+                    <i class="bi bi-plus"></i> Dodaj portfolio
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="portfoliosTable">
+                        <thead>
+                            <tr>
+                                <th>Nazwa</th>
+                                <th>Liczba projektów</th>
+                                <th>Liczba użytkowników</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dane będą dodane przez JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dla portfolio -->
+<div class="modal fade" id="portfolioModal" tabindex="-1" aria-labelledby="portfolioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="portfolioModalLabel">Portfolio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="portfolioForm">
+                    <input type="hidden" id="portfolioId">
+                    <div class="mb-3">
+                        <label for="portfolioName" class="form-label">Nazwa portfolio</label>
+                        <input type="text" class="form-control" id="portfolioName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Projekty</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="projectKey" placeholder="Klucz projektu (np. PROJ)">
+                            <button type="button" class="btn btn-outline-primary" id="addProject">
+                                <i class="bi bi-plus"></i> Dodaj projekt
+                            </button>
+                        </div>
+                        <div class="form-text">Wprowadź klucz projektu z Jiry</div>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm" id="projectsTable">
+                            <thead>
+                                <tr>
+                                    <th>Klucz projektu</th>
+                                    <th>Nazwa</th>
+                                    <th>Status</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Lista projektów będzie dodana przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+                <button type="button" class="btn btn-primary" id="savePortfolio">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/portfolios.js"></script>
+{% endblock %} 
