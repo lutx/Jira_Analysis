@@ -1,0 +1,30 @@
+{% extends "admin/views/base_table_view.html" %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datepicker.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/select2.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/toastr.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/datatables.min.css') }}">
+{% endblock %}
+
+{% set page_title = "Role Management" %}
+{% set modal_id = "roleFormModal" %}
+{% set table_id = "rolesTable" %}
+{% set item_name = "Role" %}
+
+{% set columns = [
+    {"label": "Name", "data": "name"},
+    {"label": "Description", "data": "description"},
+    {"label": "Permissions", "data": "permissions"}
+] %}
+
+{% block extra_content %}
+    {% include "admin/modals/role_form.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/admin/tables/roles_table.js') }}"></script>
+{% endblock %} 

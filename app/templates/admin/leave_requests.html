@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Requests{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Leave Requests</h1>
+  {% if leave_requests %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave in leave_requests %}
+        <tr>
+          <td>{{ leave.id }}</td>
+          <td>{{ leave.user.display_name if leave.user else 'N/A' }}</td>
+          <td>{{ leave.start_date }}</td>
+          <td>{{ leave.end_date }}</td>
+          <td>{{ leave.status }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No leave requests found.</p>
+  {% endif %}
+</div>
+{% endblock %} 

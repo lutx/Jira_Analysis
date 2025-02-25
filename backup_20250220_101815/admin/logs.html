@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+
+{% block title %}System Logs{% endblock %}
+
+{% block admin_content %}
+<div class="container">
+    <h1>System Logs</h1>
+    <div class="card">
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="logLevel" class="form-label">Log Level</label>
+                <select class="form-select" id="logLevel">
+                    <option value="all">All Levels</option>
+                    <option value="error">Error</option>
+                    <option value="warning">Warning</option>
+                    <option value="info">Info</option>
+                    <option value="debug">Debug</option>
+                </select>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Level</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTable">
+                        <!-- Logs will be loaded here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin/logs.js') }}"></script>
+{% endblock %} 

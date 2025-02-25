@@ -1,0 +1,63 @@
+{% extends "admin/base_admin.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Reports Overview</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Performance Reports -->
+                        <div class="col-md-4">
+                            <h4>Performance</h4>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.workload_report') }}">Workload Report</a>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.efficiency_report') }}">Efficiency Report</a>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.productivity_report') }}">Productivity Report</a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Resource Reports -->
+                        <div class="col-md-4">
+                            <h4>Resources</h4>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.capacity_report') }}">Capacity Report</a>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.utilization_report') }}">Utilization Report</a>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.cost_report') }}">Cost Analysis</a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Time Reports -->
+                        <div class="col-md-4">
+                            <h4>Time</h4>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.time_tracking_report') }}">Time Tracking</a>
+                                </li>
+                                <li class="list-group-item">
+                                    <a href="{{ url_for('admin.shadow_work_report') }}">Shadow Work</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

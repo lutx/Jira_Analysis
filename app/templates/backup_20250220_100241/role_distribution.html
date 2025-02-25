@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Role Distribution Report{% endblock %}
+
+{% block extra_css %}
+<!-- Remove Chart.js CSS since it doesn't exist -->
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Rozkład ról w projektach</h2>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST">
+                {{ form.csrf_token }}
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        {{ form.start_date.label }}
+                        {{ form.start_date(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.end_date.label }}
+                        {{ form.end_date(class="form-control") }}
+                    </div>
+                    <div class="col-md-4">
+                        {{ form.portfolio.label }}
+                        {{ form.portfolio(class="form-control") }}
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if data %}
+    <div class="card">
+        <div class="card-body">
+            <canvas id="roleDistributionChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('roleDistributionChart');
+new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: {{ data.labels|tojson }},
+        datasets: [{
+            data: {{ data.data|tojson }},
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)'
+            ]
+        }]
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Przygotowanie danych dla wykresów
+const chartData = {
+    labels: {{ report_data | map(attribute='role_name') | list | unique | list | tojson }},
+    hours: {{ report_data | groupby('role_name') | map('map', attribute='total_time') | map('sum') | map('divide', 3600) | list | tojson }},
+    users: {{ report_data | groupby('role_name') | map('map', attribute='users_count') | map('max') | list | tojson }}
+};
+
+// Wykres godzin
+const roleCtx = document.getElementById('roleChart').getContext('2d');
+new Chart(roleCtx, {
+    type: 'pie',
+    data: {
+        labels: chartData.labels,
+        datasets: [{
+            data: chartData.hours,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+
+// Wykres użytkowników
+const usersCtx = document.getElementById('usersChart').getContext('2d');
+new Chart(usersCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.labels,
+        datasets: [{
+            label: 'Liczba użytkowników',
+            data: chartData.users,
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Liczba użytkowników'
+                }
+            }
+        }
+    }
+});
+
+// Eksport do CSV
+function exportToCsv() {
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    const rows = [
+        ['Rola', 'Projekt', 'Liczba użytkowników', 'Przepracowane h', 'Liczba zadań']
+    ];
+    
+    {{ report_data | tojson }}.forEach(row => {
+        rows.push([
+            row.role_name,
+            row.project_key,
+            row.users_count,
+            (row.total_time / 3600).toFixed(1),
+            row.issues_count
+        ]);
+    });
+    
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'role_distribution_report.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    fetch('/reports/export', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(rows)
+    });
+}
+
+// Walidacja dat
+document.getElementById('start_date').addEventListener('change', function() {
+    document.getElementById('end_date').min = this.value;
+});
+
+document.getElementById('end_date').addEventListener('change', function() {
+    document.getElementById('start_date').max = this.value;
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,77 @@
+{% extends "admin/base_admin.html" %}
+
+{% block admin_content %}
+<div class="container">
+    <h2>Synchronizacja JIRA</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Status synchronizacji</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Ostatnia synchronizacja:</strong> <span id="lastSync">Ładowanie...</span></p>
+                    <p><strong>Status:</strong> <span id="syncStatus">Ładowanie...</span></p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button id="syncButton" class="btn btn-primary">
+                        <i class="fas fa-sync"></i> Synchronizuj teraz
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Statystyki synchronizacji</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Typ danych</th>
+                            <th>Dodane</th>
+                            <th>Zaktualizowane</th>
+                            <th>Błędy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="syncStats">
+                        <tr>
+                            <td>Projekty</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Użytkownicy</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Zadania</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td>Worklogi</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin/jira_sync.js') }}"></script>
+{% endblock %} 

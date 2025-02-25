@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Profile Settings{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Profile Settings</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        
+                        <div class="mb-3">
+                            <label for="display_name" class="form-label">Display Name</label>
+                            {{ form.display_name(class="form-control") }}
+                            {% if form.display_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.display_name.errors[0] }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors[0] }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            {{ form.current_password(class="form-control") }}
+                            {% if form.current_password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.current_password.errors[0] }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            {{ form.new_password(class="form-control") }}
+                            {% if form.new_password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.new_password.errors[0] }}
+                            </div>
+                            {% endif %}
+                            <small class="text-muted">Leave blank to keep current password</small>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

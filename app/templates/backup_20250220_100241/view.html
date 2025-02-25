@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}{{ portfolio.name }} - Portfolio{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>{{ portfolio.name }}</h1>
+                    <p class="text-muted">{{ portfolio.description }}</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editPortfolioModal">
+                        <i class="bi bi-pencil"></i> Edytuj
+                    </button>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                        <i class="bi bi-plus"></i> Dodaj projekt
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statystyki -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Projekty</h5>
+                            <h2>{{ stats.total_projects }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Użytkownicy</h5>
+                            <h2>{{ stats.total_users }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Łączny czas</h5>
+                            <h2>{{ (stats.total_time / 3600) | round(1) }}h</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista projektów -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Projekty w portfolio</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Klucz projektu</th>
+                                    <th>Użytkownicy</th>
+                                    <th>Zadania</th>
+                                    <th>Czas</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in stats.projects %}
+                                <tr>
+                                    <td>{{ project.project_key }}</td>
+                                    <td>{{ project.users_count }}</td>
+                                    <td>{{ project.issues_count }}</td>
+                                    <td>{{ (project.total_time / 3600) | round(1) }}h</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="removeProject('{{ project.project_key }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal edycji portfolio -->
+<div class="modal fade" id="editPortfolioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('portfolio.update', portfolio_id=portfolio.id) }}" method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edytuj portfolio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nazwa</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ portfolio.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Opis</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="3">{{ portfolio.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="client_name" class="form-label">Klient</label>
+                        <input type="text" class="form-control" id="client_name" name="client_name" 
+                               value="{{ portfolio.client_name }}">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania projektu -->
+<div class="modal fade" id="addProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addProjectForm" method="post" action="{{ url_for('portfolio.add_project', portfolio_id=portfolio.id) }}">
+                {{ form.csrf_token }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Dodaj projekt</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="project_key" class="form-label">Klucz projektu</label>
+                        <input type="text" class="form-control" id="project_key" name="project_key" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+async function removeProject(projectKey) {
+    if (!confirm(`Czy na pewno chcesz usunąć projekt ${projectKey} z portfolio?`)) return;
+    
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    
+    fetch(`/portfolio/projects/${projectKey}/remove`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Błąd podczas usuwania projektu');
+        }
+    });
+}
+
+document.getElementById('addProjectForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch(this.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Błąd podczas dodawania projektu');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Błąd podczas dodawania projektu');
+    }
+});
+
+function updateStatus(id) {
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    fetch(`/portfolio/${id}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+}
+
+function deletePortfolio(id) {
+    if (!confirm('Czy na pewno chcesz usunąć to portfolio?')) return;
+    
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    
+    fetch(`/portfolio/${id}/delete`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    }).then(response => {
+        if (response.ok) {
+            window.location.href = '/portfolio';
+        } else {
+            alert('Błąd podczas usuwania portfolio');
+        }
+    });
+}
+</script>
+{% endblock %} 

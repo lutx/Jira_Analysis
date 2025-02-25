@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Shadow Work Analysis{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Shadow Work Analysis</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="shadowWorkFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Team</label>
+                    <select class="form-select" name="team_id">
+                        <option value="">All Teams</option>
+                        {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" name="category">
+                        <option value="">All Categories</option>
+                        <option value="meetings">Meetings</option>
+                        <option value="support">Support</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Shadow Hours</h6>
+                    <h3 class="mb-0">{{ total_shadow_hours }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Average Per User</h6>
+                    <h3 class="mb-0">{{ avg_hours_per_user }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Most Common Category</h6>
+                    <h3 class="mb-0">{{ most_common_category }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Impact Percentage</h6>
+                    <h3 class="mb-0">{{ impact_percentage }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="row">
+        <!-- Category Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Category Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" data-chart-type="shadow" data-chart-data="{{ category_distribution_data }}">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Time Trend -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Time Trend</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" data-chart-type="shadow" data-chart-data="{{ time_trend_data }}">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Detailed Shadow Work</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="shadowWorkTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Team</th>
+                            <th>Category</th>
+                            <th>Hours</th>
+                            <th>Date</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in shadow_work_details %}
+                        <tr>
+                            <td>{{ entry.user.display_name }}</td>
+                            <td>{{ entry.team.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ entry.category_class }}">
+                                    {{ entry.category }}
+                                </span>
+                            </td>
+                            <td>{{ entry.hours }}</td>
+                            <td>{{ entry.date }}</td>
+                            <td>{{ entry.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/shadow_work.js') }}"></script>
+{% endblock %} 

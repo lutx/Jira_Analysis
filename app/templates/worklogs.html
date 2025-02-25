@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Worklogi - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Worklogi</h5>
+                    <div>
+                        <button class="btn btn-secondary me-2" onclick="syncWorklogs()">
+                            <i class="bi bi-arrow-repeat"></i> Synchronizuj
+                        </button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWorklogModal">
+                            <i class="bi bi-plus"></i> Dodaj worklog
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtry -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-calendar-range"></i></span>
+                                <input type="text" class="form-control" id="dateRange" placeholder="Wybierz zakres dat">
+                                <input type="hidden" id="startDate">
+                                <input type="hidden" id="endDate">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="projectFilter">
+                                <option value="">Wszystkie projekty</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                <i class="bi bi-funnel"></i> Filtruj
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Statystyki -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Suma godzin</h6>
+                                    <h3 class="mb-0" id="totalHours">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Liczba worklogów</h6>
+                                    <h3 class="mb-0" id="totalWorklogs">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Aktywni użytkownicy</h6>
+                                    <h3 class="mb-0" id="activeUsers">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Średnio godzin/dzień</h6>
+                                    <h3 class="mb-0" id="avgHoursPerDay">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabela worklogów -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="worklogsTable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Projekt</th>
+                                    <th>Zadanie</th>
+                                    <th>Czas (h)</th>
+                                    <th>Opis</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania worklogu -->
+<div class="modal fade" id="addWorklogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dodaj worklog</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="worklogForm">
+                    <div class="mb-3">
+                        <label class="form-label">Projekt</label>
+                        <select class="form-select" id="projectSelect" required>
+                            <option value="">Wybierz projekt</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Zadanie</label>
+                        <select class="form-select" id="issueSelect" required>
+                            <option value="">Wybierz zadanie</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data</label>
+                        <input type="date" class="form-control" id="workDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Czas (h)</label>
+                        <input type="number" class="form-control" id="timeSpent" step="0.25" min="0.25" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Opis</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="saveWorklog()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="/static/js/worklogs.js"></script>
+{% endblock %}

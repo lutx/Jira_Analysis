@@ -1,0 +1,107 @@
+{% extends "admin/administration/base_administration.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Audit Logs</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary" id="exportAudit">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control daterange" id="dateRange">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">User</label>
+                            <select class="form-select select2" id="userFilter">
+                                <option value="">All Users</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.display_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Action Type</label>
+                            <select class="form-select" id="actionFilter">
+                                <option value="">All Actions</option>
+                                <option value="CREATE">Create</option>
+                                <option value="UPDATE">Update</option>
+                                <option value="DELETE">Delete</option>
+                                <option value="LOGIN">Login</option>
+                                <option value="LOGOUT">Logout</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Audit Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="auditTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Action</th>
+                                    <th>Resource</th>
+                                    <th>Details</th>
+                                    <th>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in audit_entries %}
+                                <tr>
+                                    <td>{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ entry.user.display_name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ entry.action_color }}">
+                                            {{ entry.action }}
+                                        </span>
+                                    </td>
+                                    <td>{{ entry.resource_type }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#auditDetailsModal"
+                                                data-audit-id="{{ entry.id }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    </td>
+                                    <td>{{ entry.ip_address }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audit Details Modal -->
+<div class="modal fade" id="auditDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Audit Entry Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="auditDetails"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/audit.js') }}"></script>
+{% endblock %} 

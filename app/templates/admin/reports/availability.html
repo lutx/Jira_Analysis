@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}User Availability{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>User Availability Analysis</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="availabilityFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Team</label>
+                    <select class="form-select" name="team_id">
+                        <option value="">All Teams</option>
+                        {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="available">Available</option>
+                        <option value="leave">On Leave</option>
+                        <option value="partial">Partial Availability</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="row">
+        <!-- Daily Availability -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Daily Availability</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" data-chart-type="availability" data-chart-data="{{ daily_availability_data }}">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Team Availability -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Team Availability</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" data-chart-type="availability" data-chart-data="{{ team_availability_data }}">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendar View -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Availability Calendar</h5>
+        </div>
+        <div class="card-body">
+            <div id="availabilityCalendar"></div>
+        </div>
+    </div>
+    
+    <!-- Detailed View -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Detailed Availability</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="availabilityTable">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Team</th>
+                            <th>Status</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in availability_details %}
+                        <tr>
+                            <td>{{ entry.user.display_name }}</td>
+                            <td>{{ entry.team.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ entry.status_class }}">
+                                    {{ entry.status }}
+                                </span>
+                            </td>
+                            <td>{{ entry.from_date }}</td>
+                            <td>{{ entry.to_date }}</td>
+                            <td>{{ entry.notes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.0/main.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/availability.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,32 @@
+{% extends "admin/modals/base_form_modal.html" %}
+
+{% set modal_id = "projectFormModal" %}
+{% set form_id = "projectForm" %}
+{% set title = "Project Form" %}
+
+{% block form_fields %}
+<div class="mb-3">
+    {{ form.name.label(class="form-label") }}
+    {{ form.name(class="form-control") }}
+</div>
+<div class="mb-3">
+    {{ form.description.label(class="form-label") }}
+    {{ form.description(class="form-control") }}
+</div>
+<div class="mb-3">
+    {{ form.team.label(class="form-label") }}
+    {{ form.team(class="form-select select2") }}
+</div>
+<div class="mb-3">
+    {{ form.start_date.label(class="form-label") }}
+    {{ form.start_date(class="form-control datepicker") }}
+</div>
+<div class="mb-3">
+    {{ form.end_date.label(class="form-label") }}
+    {{ form.end_date(class="form-control datepicker") }}
+</div>
+<div class="mb-3">
+    {{ form.status.label(class="form-label") }}
+    {{ form.status(class="form-select") }}
+</div>
+{% endblock %} 

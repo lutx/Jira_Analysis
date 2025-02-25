@@ -1,0 +1,28 @@
+{% extends "admin/modals/base_form_modal.html" %}
+
+{% set modal_id = "worklogFormModal" %}
+{% set form_id = "worklogForm" %}
+{% set title = "Worklog Form" %}
+
+{% block form_fields %}
+<div class="mb-3">
+    {{ form.date.label(class="form-label") }}
+    {{ form.date(class="form-control datepicker") }}
+</div>
+<div class="mb-3">
+    {{ form.hours.label(class="form-label") }}
+    {{ form.hours(class="form-control", type="number", step="0.5") }}
+</div>
+<div class="mb-3">
+    {{ form.project.label(class="form-label") }}
+    {{ form.project(class="form-select select2") }}
+</div>
+<div class="mb-3">
+    {{ form.activity_type.label(class="form-label") }}
+    {{ form.activity_type(class="form-select") }}
+</div>
+<div class="mb-3">
+    {{ form.description.label(class="form-label") }}
+    {{ form.description(class="form-control") }}
+</div>
+{% endblock %} 

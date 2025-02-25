@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Shadow Work Report{% endblock %}
+
+{% block extra_css %}
+<!-- Remove Chart.js CSS since it doesn't exist -->
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Raport Shadow Work</h1>
+                <div>
+                    <button class="btn btn-secondary" onclick="exportToCsv()">
+                        <i class="bi bi-download"></i> Eksportuj CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filtry -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form class="row g-3" method="get" id="filterForm">
+                        {{ form.csrf_token }}
+                        <div class="col-md-4">
+                            <label for="month_year" class="form-label">Miesiąc</label>
+                            <input type="month" class="form-control" id="month_year" 
+                                   name="month_year" value="{{ month_year }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Filtruj
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Wykresy -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top użytkownicy - Shadow Work</h5>
+                            <canvas id="usersChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Top projekty - Shadow Work</h5>
+                            <canvas id="projectsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela danych -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Projekt</th>
+                                    <th>Przepracowane h</th>
+                                    <th>Liczba zadań</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in report_data %}
+                                <tr>
+                                    <td>{{ row.username }}</td>
+                                    <td>{{ row.project_key }}</td>
+                                    <td>{{ (row.total_time / 3600) | round(1) }}</td>
+                                    <td>{{ row.issues_count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+// Przygotowanie danych dla wykresów
+const chartData = {
+    users: {{ report_data | groupby('username') | map('first') | map(attribute='username') | list | tojson }},
+    userHours: {{ report_data | groupby('username') | map('map', attribute='total_time') | map('sum') | map('divide', 3600) | list | tojson }},
+    projects: {{ report_data | groupby('project_key') | map('first') | map(attribute='project_key') | list | tojson }},
+    projectHours: {{ report_data | groupby('project_key') | map('map', attribute='total_time') | map('sum') | map('divide', 3600) | list | tojson }}
+};
+
+// Wykres użytkowników
+const usersCtx = document.getElementById('usersChart').getContext('2d');
+new Chart(usersCtx, {
+    type: 'bar',
+    data: {
+        labels: chartData.users,
+        datasets: [{
+            label: 'Godziny',
+            data: chartData.userHours,
+            backgroundColor: 'rgba(255, 99, 132, 0.5)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Godziny'
+                }
+            }
+        }
+    }
+});
+
+// Wykres projektów
+const projectsCtx = document.getElementById('projectsChart').getContext('2d');
+new Chart(projectsCtx, {
+    type: 'pie',
+    data: {
+        labels: chartData.projects,
+        datasets: [{
+            data: chartData.projectHours,
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true
+    }
+});
+
+// Eksport do CSV
+function exportToCsv() {
+    const rows = [
+        ['Użytkownik', 'Projekt', 'Przepracowane h', 'Liczba zadań']
+    ];
+    
+    {{ report_data | tojson }}.forEach(row => {
+        rows.push([
+            row.username,
+            row.project_key,
+            (row.total_time / 3600).toFixed(1),
+            row.issues_count
+        ]);
+    });
+    
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'shadow_work_report.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %} 

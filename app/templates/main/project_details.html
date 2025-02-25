@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{{ project.name }}</h1>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Project Details</h5>
+            <p><strong>Description:</strong> {{ project.description }}</p>
+            <p><strong>Key:</strong> {{ project.jira_key }}</p>
+            <p><strong>Status:</strong> {{ project.status }}</p>
+            <!-- Dodaj więcej szczegółów projektu -->
+        </div>
+    </div>
+</div>
+{% endblock %} 

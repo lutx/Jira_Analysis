@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Dashboard</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row mt-4">
+        <!-- Projekty -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Moje Projekty</h5>
+                </div>
+                <div class="card-body">
+                    {% if projects %}
+                        <ul class="list-group">
+                        {% for project in projects %}
+                            <li class="list-group-item">{{ project.name }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Brak przypisanych projektów.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Zespoły -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Moje Zespoły</h5>
+                </div>
+                <div class="card-body">
+                    {% if teams %}
+                        <ul class="list-group">
+                        {% for team in teams %}
+                            <li class="list-group-item">{{ team.name }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Brak przypisanych zespołów.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Worklog -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Ostatnie Worklog</h5>
+                </div>
+                <div class="card-body">
+                    {% if worklogs %}
+                        <ul class="list-group">
+                        {% for worklog in worklogs %}
+                            <li class="list-group-item">
+                                {{ worklog.date.strftime('%Y-%m-%d') }} - {{ worklog.hours }}h
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">Brak wpisów worklog.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

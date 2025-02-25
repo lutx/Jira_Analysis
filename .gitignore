@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -20,43 +21,50 @@ wheels/
 .installed.cfg
 *.egg
 
+# Flask
+instance/
+.webassets-cache
+app.db
+
 # Virtual Environment
 venv/
-env/
 ENV/
-.env
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
 
-# Flask
-instance/
-.webassets-cache
+# Logs
+*.log
 
-# Application specific
-data/
-uploads/
-backups/
+# Database
 *.db
 *.sqlite3
-*.log
-static/uploads/
-app.log
+
+# Migrations
+migrations/versions/*
+!migrations/versions/.gitkeep
+
+# Environment variables
+.env
+.venv
+
+# Application specific
+*.db
+logs/
+uploads/
+backups/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Temporary files
 *.tmp
 *.bak
 *.swp
 *~
-
-# Environment variables
-.env
-.env.local
-.env.*.local
 
 # Debug files
 debug.log
@@ -82,4 +90,16 @@ coverage.xml
 
 # Misc
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Instance folder
+*.db
+
+# New code block
+*.pyc
+__pycache__/
+.env
+*.db
+migrations/versions/*
+!migrations/versions/.gitkeep 
+node_modules/

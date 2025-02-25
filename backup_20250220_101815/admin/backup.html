@@ -1,0 +1,144 @@
+{% extends "admin/administration/base_administration.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Backup Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Database Backup</h3>
+                </div>
+                <div class="card-body">
+                    <form id="backupForm" method="POST" action="{{ url_for('admin.create_backup') }}">
+                        {{ backup_form.csrf_token }}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ backup_form.include_files(class="form-check-input") }}
+                                {{ backup_form.include_files.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ backup_form.compress(class="form-check-input") }}
+                                {{ backup_form.compress.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Create Backup
+                        </button>
+                    </form>
+
+                    <!-- Backup History -->
+                    <h4 class="mt-4">Backup History</h4>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Size</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for backup in backups %}
+                                <tr>
+                                    <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ backup.size_formatted }}</td>
+                                    <td>{{ backup.type }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('admin.download_backup', backup_id=backup.id) }}" 
+                                               class="btn btn-sm btn-info">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger"
+                                                    onclick="deleteBackup('{{ backup.id }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Restore Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Database Restore</h3>
+                </div>
+                <div class="card-body">
+                    <form id="restoreForm" method="POST" action="{{ url_for('admin.restore_backup') }}" enctype="multipart/form-data">
+                        {{ restore_form.csrf_token }}
+                        <div class="mb-3">
+                            {{ restore_form.backup_file.label(class="form-label") }}
+                            {{ restore_form.backup_file(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ restore_form.clear_existing(class="form-check-input") }}
+                                {{ restore_form.clear_existing.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Warning: Restoring a backup will overwrite existing data. Make sure you have a backup before proceeding.
+                        </div>
+                        <button type="submit" class="btn btn-warning" onclick="return confirmRestore()">
+                            <i class="fas fa-upload"></i> Restore Backup
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Maintenance -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3 class="card-title">Database Maintenance</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-info" onclick="optimizeDatabase()">
+                            <i class="fas fa-optimize"></i> Optimize Database
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="clearCache()">
+                            <i class="fas fa-broom"></i> Clear Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/backup.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container">
+    <h1>Notifications</h1>
+    <div class="card">
+        <div class="card-body">
+            <div id="notifications-list">
+                <!-- Notifications will be loaded here dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/notifications.js') }}"></script>
+{% endblock %} 

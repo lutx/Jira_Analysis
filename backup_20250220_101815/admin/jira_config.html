@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+
+{% block page_title %}JIRA Configuration{% endblock %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('admin.jira_config') }}" id="jiraConfigForm">
+            {{ form.csrf_token }}
+            <div class="mb-3">
+                <label for="url" class="form-label">JIRA URL</label>
+                {{ form.url(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                {{ form.username(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                <label for="api_token" class="form-label">API Token</label>
+                {{ form.api_token(class="form-control") }}
+            </div>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Save Configuration</button>
+                <button type="button" class="btn btn-secondary" id="testConnection">Test Connection</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin/jira_config.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,120 @@
+{% extends "admin/administration/base_administration.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">System Logs</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary" id="downloadLogs">
+                            <i class="fas fa-download"></i> Download Logs
+                        </button>
+                        <button type="button" class="btn btn-danger" id="clearLogs">
+                            <i class="fas fa-trash"></i> Clear Logs
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Log Level</label>
+                            <select class="form-select" id="logLevel">
+                                <option value="ALL">All Levels</option>
+                                <option value="ERROR">Error</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="INFO">Info</option>
+                                <option value="DEBUG">Debug</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control daterange" id="dateRange">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" id="logSearch" placeholder="Search logs...">
+                        </div>
+                    </div>
+
+                    <!-- Log Table -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="logsTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Level</th>
+                                    <th>Module</th>
+                                    <th>Message</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr class="log-level-{{ log.level|lower }}">
+                                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ log.level_color }}">
+                                            {{ log.level }}
+                                        </span>
+                                    </td>
+                                    <td>{{ log.module }}</td>
+                                    <td>{{ log.message }}</td>
+                                    <td>
+                                        {% if log.details %}
+                                        <button type="button" class="btn btn-sm btn-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#logDetailsModal"
+                                                data-log-id="{{ log.id }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="dataTables_info">
+                            Showing {{ pagination.start }} to {{ pagination.end }} of {{ pagination.total }} entries
+                        </div>
+                        <nav>
+                            <ul class="pagination">
+                                {{ pagination.links|safe }}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="logDetails" class="bg-light p-3"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/admin/logs.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/system_logs.js') }}"></script>
+{% endblock %} 

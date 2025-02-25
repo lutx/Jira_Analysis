@@ -1,0 +1,48 @@
+/* Layout */
+.wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background: #343a40;
+    color: #fff;
+    transition: all 0.3s;
+}
+
+.content-wrapper {
+    flex: 1;
+    padding: 20px;
+}
+
+/* Tables */
+.table-responsive {
+    margin-bottom: 1rem;
+}
+
+/* Forms */
+.select2-container--bootstrap-5 .select2-selection {
+    height: calc(1.5em + 0.75rem + 2px);
+}
+
+/* Cards */
+.card {
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+}
+
+/* Modals */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Utilities */
+.page-header {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+} 

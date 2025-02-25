@@ -1,0 +1,22 @@
+{% extends "admin/views/base_view.html" %}
+
+{% block page_actions %}
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">
+        <i class="fas fa-plus"></i> Add {{ item_name }}
+    </button>
+{% endblock %}
+
+{% block view_content %}
+    <div class="table-responsive">
+        <table class="table table-striped" id="{{ table_id }}">
+            <thead>
+                <tr>
+                    {% for column in columns %}
+                    <th>{{ column.label }}</th>
+                    {% endfor %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+{% endblock %} 

@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Raporty Systemowe{% endblock %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title mb-4">Raporty Systemowe</h3>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Raport Aktywności</h5>
+                        <p class="card-text">Szczegółowy raport aktywności użytkowników w systemie.</p>
+                        <a href="{{ url_for('admin.activity_report') }}" class="btn btn-primary">
+                            <i class="fas fa-chart-line"></i> Generuj Raport
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Raport Wydajności</h5>
+                        <p class="card-text">Analiza wydajności i obciążenia systemu.</p>
+                        <a href="{{ url_for('admin.performance_report') }}" class="btn btn-primary">
+                            <i class="fas fa-tachometer-alt"></i> Generuj Raport
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

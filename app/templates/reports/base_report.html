@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>{{ report_title }}</h1>
+        </div>
+    </div>
+
+    <!-- Filtry -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Od daty</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                           value="{{ filters.start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">Do daty</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                           value="{{ filters.end_date }}">
+                </div>
+                {% block additional_filters %}{% endblock %}
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Filtruj
+                    </button>
+                    <a href="{{ url_for(request.endpoint) }}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Resetuj
+                    </a>
+                    <button type="button" class="btn btn-success" onclick="exportToExcel()">
+                        <i class="bi bi-file-excel"></i> Eksportuj do Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Zawartość raportu -->
+    {% block report_content %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.17.0/dist/xlsx.full.min.js"></script>
+<script>
+function exportToExcel() {
+    const table = document.querySelector('#reportTable');
+    const wb = XLSX.utils.table_to_book(table);
+    const reportName = '{{ report_title|lower|replace(" ", "_") }}';
+    XLSX.writeFile(wb, `${reportName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+$(document).ready(function() {
+    $('#reportTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Polish.json'
+        },
+        dom: 'Bfrtip',
+        buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+    });
+});
+</script>
+{% endblock %} 

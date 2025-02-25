@@ -1,0 +1,194 @@
+/* Reports layout */
+.reports-container {
+    padding: 1.5rem;
+}
+
+/* Filters section */
+.filters-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filters-section .form-group {
+    margin-bottom: 1rem;
+}
+
+.filters-section label {
+    font-weight: 500;
+    color: var(--secondary-color);
+}
+
+/* Report cards */
+.report-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.report-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.report-card .card-title {
+    color: var(--secondary-color);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Report tables */
+.report-table {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.report-table th {
+    background-color: var(--light-color);
+    color: var(--secondary-color);
+    font-weight: 600;
+    padding: 0.75rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.report-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--light-color);
+}
+
+.report-table tbody tr:hover {
+    background-color: var(--light-color);
+}
+
+/* Charts section */
+.chart-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chart-section .chart-title {
+    color: var(--secondary-color);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Export buttons */
+.export-buttons {
+    margin-bottom: 1rem;
+}
+
+.export-buttons .btn {
+    margin-right: 0.5rem;
+}
+
+/* Summary section */
+.summary-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--light-color);
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-label {
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.summary-value {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .filters-section {
+        padding: 1rem;
+    }
+    
+    .report-card {
+        padding: 1rem;
+    }
+    
+    .chart-section {
+        padding: 1rem;
+    }
+    
+    .summary-section {
+        padding: 1rem;
+    }
+}
+
+/* Style dla raportów */
+.report-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.report-filters {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.report-chart {
+    margin-bottom: 30px;
+    height: 300px;
+}
+
+.report-table {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.summary-card {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.summary-card h4 {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.summary-card p {
+    margin: 10px 0 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+} 

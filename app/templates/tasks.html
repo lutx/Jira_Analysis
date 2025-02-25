@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Zadania - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Lista zadań</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            {% if tasks %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Klucz</th>
+                            <th>Tytuł</th>
+                            <th>Status</th>
+                            <th>Priorytet</th>
+                            <th>Aktualizacja</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                        <tr>
+                            <td>
+                                <a href="{{ jira_url }}/browse/{{ task.key }}" target="_blank">
+                                    {{ task.key }}
+                                </a>
+                            </td>
+                            <td>{{ task.fields.summary }}</td>
+                            <td>
+                                <span class="badge bg-{{ task.fields.status.statusCategory.colorName }}">
+                                    {{ task.fields.status.name }}
+                                </span>
+                            </td>
+                            <td>
+                                <img src="{{ task.fields.priority.iconUrl }}" alt="{{ task.fields.priority.name }}"
+                                     title="{{ task.fields.priority.name }}" width="16" height="16">
+                            </td>
+                            <td>{{ task.fields.updated|datetime }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="addWorklog('{{ task.key }}')">
+                                    <i class="fas fa-clock"></i> Dodaj worklog
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                Brak zadań do wyświetlenia.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal do dodawania worklogu -->
+<div class="modal fade" id="worklogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dodaj worklog</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="worklogForm">
+                    <input type="hidden" id="taskKey" name="taskKey">
+                    <div class="mb-3">
+                        <label for="timeSpent" class="form-label">Czas (np. 2h 30m)</label>
+                        <input type="text" class="form-control" id="timeSpent" name="timeSpent" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Komentarz</label>
+                        <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="submitWorklog()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function addWorklog(taskKey) {
+    document.getElementById('taskKey').value = taskKey;
+    const modal = new bootstrap.Modal(document.getElementById('worklogModal'));
+    modal.show();
+}
+
+async function submitWorklog() {
+    const taskKey = document.getElementById('taskKey').value;
+    const timeSpent = document.getElementById('timeSpent').value;
+    const comment = document.getElementById('comment').value;
+    
+    try {
+        const response = await fetch(`/api/issue/${taskKey}/worklog`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                timeSpent: timeSpent,
+                comment: comment
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            toastr.success('Worklog został dodany');
+            bootstrap.Modal.getInstance(document.getElementById('worklogModal')).hide();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            throw new Error(data.error || 'Wystąpił błąd podczas dodawania worklogu');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        toastr.error(error.message || 'Wystąpił błąd podczas dodawania worklogu');
+    }
+}
+</script>
+{% endblock %} 

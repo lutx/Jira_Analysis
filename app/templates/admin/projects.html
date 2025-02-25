@@ -1,0 +1,202 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Projekty</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectAddModal">
+                        <i class="bi bi-plus-circle me-2"></i>Dodaj Projekt
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if projects %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nazwa</th>
+                                    <th>Klucz JIRA</th>
+                                    <th>Status</th>
+                                    <th>Użytkownicy</th>
+                                    <th>Ostatnia synchronizacja</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for project in projects %}
+                                <tr>
+                                    <td>{{ project.name }}</td>
+                                    <td>{{ project.jira_key }}</td>
+                                    <td>
+                                        <span class="badge {% if project.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ 'Aktywny' if project.is_active else 'Nieaktywny' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ project.assignments|length }}</td>
+                                    <td>{{ project.last_sync|datetime if project.last_sync else 'Nigdy' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" 
+                                                    class="btn btn-primary"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#projectEditModal"
+                                                    data-project-id="{{ project.id }}"
+                                                    data-project-name="{{ project.name }}"
+                                                    data-project-key="{{ project.jira_key }}"
+                                                    onclick="handleProjectEdit({{ project.id }})">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-danger delete-project-btn"
+                                                    data-project-id="{{ project.id }}"
+                                                    data-url="{{ url_for('admin.delete_project', project_id=project.id) }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Brak projektów w systemie.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania projektu -->
+<div class="modal fade" id="projectAddModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dodaj Projekt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProjectForm" method="POST" action="{{ url_for('admin.add_project') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <div class="mb-3">
+                        <label for="projectName" class="form-label">Nazwa projektu</label>
+                        <input type="text" class="form-control" id="projectName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projectKey" class="form-label">Klucz JIRA</label>
+                        <input type="text" class="form-control" id="projectKey" name="jira_key">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="submit" form="addProjectForm" class="btn btn-primary">Dodaj</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal edycji projektu -->
+<div class="modal fade" id="projectEditModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edytuj Projekt</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProjectForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" id="editProjectId" name="id">
+                    <div class="mb-3">
+                        <label for="editProjectName" class="form-label">Nazwa projektu</label>
+                        <input type="text" class="form-control" id="editProjectName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editProjectKey" class="form-label">Klucz JIRA</label>
+                        <input type="text" class="form-control" id="editProjectKey" name="jira_key">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="saveProjectChanges()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function handleProjectEdit(projectId) {
+    const button = document.querySelector(`[data-project-id="${projectId}"]`);
+    const name = button.getAttribute('data-project-name');
+    const key = button.getAttribute('data-project-key');
+    
+    document.getElementById('editProjectId').value = projectId;
+    document.getElementById('editProjectName').value = name;
+    document.getElementById('editProjectKey').value = key;
+}
+
+async function saveProjectChanges() {
+    const form = document.getElementById('editProjectForm');
+    const projectId = document.getElementById('editProjectId').value;
+    
+    try {
+        const response = await fetch(`/admin/projects/${projectId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                name: document.getElementById('editProjectName').value,
+                jira_key: document.getElementById('editProjectKey').value
+            })
+        });
+
+        if (response.ok) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('projectEditModal'));
+            modal.hide();
+            window.location.reload();
+        } else {
+            throw new Error('Błąd podczas zapisywania zmian');
+        }
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+// Obsługa usuwania projektu
+document.querySelectorAll('.delete-project-btn').forEach(button => {
+    button.addEventListener('click', async function() {
+        if (confirm('Czy na pewno chcesz usunąć ten projekt?')) {
+            const url = this.getAttribute('data-url');
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else {
+                    throw new Error('Błąd podczas usuwania projektu');
+                }
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

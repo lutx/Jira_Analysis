@@ -1,0 +1,497 @@
+.badge {
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.form-check {
+    margin-bottom: 0.5rem;
+}
+
+.permissions-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+}
+
+/* Style dla sekcji projektów */
+.projects-table {
+    margin-top: 20px;
+}
+
+.project-actions {
+    display: flex;
+    gap: 5px;
+}
+
+#syncProjects {
+    margin-top: 20px;
+}
+
+.project-status {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    border-radius: 3px;
+    font-size: 0.85em;
+}
+
+.project-status.active {
+    background-color: #28a745;
+    color: white;
+}
+
+.project-status.inactive {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Tabela użytkowników */
+#usersDataTable {
+    width: 100% !important;
+}
+
+#usersDataTable th,
+#usersDataTable td {
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Modal */
+.modal-dialog {
+    max-width: 600px;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+/* Formularze */
+.form-label {
+    font-weight: 500;
+}
+
+.form-check {
+    margin-bottom: 0.5rem;
+}
+
+/* Admin panel layout */
+.sidebar {
+    width: 250px;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: #343a40;
+    transition: all 0.3s ease;
+    overflow-y: auto;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #fff;
+}
+
+/* Navigation Items */
+.sidebar .nav-item {
+    width: 100%;
+}
+
+.sidebar .nav-link {
+    padding: 0.8rem 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: #fff;
+    background: #007bff;
+}
+
+/* Icons */
+.sidebar .nav-link i {
+    width: 20px;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+/* Submenu */
+.sidebar .collapse {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .collapse .nav-link {
+    padding-left: 3rem;
+    font-size: 0.9rem;
+}
+
+.sidebar .collapse .nav-link.active {
+    background: rgba(0, 123, 255, 0.2);
+}
+
+/* Section Headers */
+.nav-header {
+    padding: 0.7rem 1rem 0.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* Content Wrapper */
+.content-wrapper {
+    margin-left: 250px;
+    padding: 1rem;
+    min-height: calc(100vh - 56px);
+    background: #f4f6f9;
+    transition: margin-left 0.3s ease;
+}
+
+/* Cards */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+    padding: 0.75rem 1.25rem;
+}
+
+/* Forms */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+/* Tables */
+.table {
+    background: #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 500;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(0,0,0,.02);
+}
+
+/* Buttons */
+.btn-toolbar {
+    margin-bottom: 1rem;
+}
+
+/* Notifications */
+.toast-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1050;
+}
+
+.alert {
+    margin-bottom: 1rem;
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+
+.alert-dismissible .btn-close {
+    padding: 0.75rem 1rem;
+}
+
+/* DataTables customization */
+.dataTables_wrapper .dataTables_length select {
+    min-width: 60px;
+}
+
+/* Select2 customization */
+.select2-container--bootstrap4 .select2-selection {
+    height: calc(1.5em + 0.75rem + 2px);
+}
+
+/* Stats cards */
+.stats-card {
+    padding: 1.5rem;
+    border-radius: .5rem;
+    background: white;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.stats-card h3 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.stats-card p {
+    margin: 0;
+    color: #6c757d;
+}
+
+/* Notifications w panelu admina */
+main .notifications-container {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 1rem;
+    pointer-events: auto;
+}
+
+main .notifications-container .alert {
+    margin-bottom: 0.5rem;
+    animation: slideDown 0.3s forwards;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Notifications poza panelem admina */
+body > .notifications-container {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    z-index: 9999;
+    width: 350px;
+    max-width: 90%;
+    pointer-events: none;
+}
+
+body > .notifications-container .alert {
+    pointer-events: auto;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    animation: slideIn 0.3s forwards;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Animacje dla alertów */
+.alert.fade {
+    transition: opacity 0.15s linear;
+}
+
+.alert.fade.show {
+    opacity: 1;
+}
+
+/* Kolory alertów */
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
+.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+    
+    .sidebar.show {
+        margin-left: 0;
+    }
+    
+    .content-wrapper {
+        margin-left: 0;
+    }
+}
+
+/* Log viewer styles */
+.log-viewer {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Consolas', monospace;
+    padding: 1rem;
+    border-radius: 4px;
+    height: 600px;
+    overflow-y: auto;
+}
+
+.log-entry {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #333;
+    font-size: 0.9rem;
+}
+
+.log-entry .timestamp {
+    color: #569cd6;
+    margin-right: 1rem;
+}
+
+.log-entry .level {
+    font-weight: bold;
+    margin-right: 1rem;
+}
+
+.log-entry.error .level {
+    color: #f44336;
+}
+
+.log-entry.warning .level {
+    color: #ffc107;
+}
+
+.log-entry.info .level {
+    color: #4caf50;
+}
+
+.log-entry.debug .level {
+    color: #9e9e9e;
+}
+
+/* Animation */
+.collapse {
+    transition: all 0.3s ease;
+}
+
+/* Active States */
+.nav-item.active > .nav-link {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.active > .collapse {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Section Headers */
+.content-header {
+    padding: 1rem;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    margin-bottom: 1rem;
+}
+
+.content-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 500;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+    margin: 0;
+    padding: 0;
+    background: none;
+}
+
+/* Buttons and Interactive Elements */
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+/* Style dla panelu administracyjnego */
+.admin-panel {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-table {
+    margin-top: 20px;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Style dla przycisków akcji */
+.btn-action {
+    padding: 5px 10px;
+    font-size: 0.875rem;
+}
+
+/* Style dla komunikatów */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+    .admin-actions {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}

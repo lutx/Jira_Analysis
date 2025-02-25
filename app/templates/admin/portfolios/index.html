@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Zarządzanie Zespołami - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Zarządzanie Zespołami</h5>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeamModal">
+                        <i class="bi bi-plus"></i> Dodaj zespół
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Lista zespołów -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="teamsTable">
+                            <thead>
+                                <tr>
+                                    <th>Nazwa</th>
+                                    <th>Opis</th>
+                                    <th>Lider</th>
+                                    <th>Członkowie</th>
+                                    <th>Status</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania/edycji zespołu -->
+<div class="modal fade" id="teamModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Dodaj zespół</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="teamForm">
+                    <input type="hidden" id="teamId">
+                    <div class="mb-3">
+                        <label class="form-label">Nazwa zespołu</label>
+                        <input type="text" class="form-control" id="teamName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Opis</label>
+                        <textarea class="form-control" id="teamDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lider zespołu</label>
+                        <select class="form-select" id="teamLeader" required>
+                            <option value="">Wybierz lidera</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="saveTeam()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal zarządzania członkami -->
+<div class="modal fade" id="membersModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Zarządzaj członkami zespołu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <select class="form-select" id="newMember">
+                            <option value="">Wybierz użytkownika</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary w-100" onclick="addMember()">
+                            <i class="bi bi-plus"></i> Dodaj członka
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table" id="membersTable">
+                        <thead>
+                            <tr>
+                                <th>Użytkownik</th>
+                                <th>Rola</th>
+                                <th>Data dołączenia</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dane będą dodane przez JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/teams/index.js"></script>
+{% endblock %} 

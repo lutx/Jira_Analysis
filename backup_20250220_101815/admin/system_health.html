@@ -1,0 +1,69 @@
+{% extends "admin/administration/base_administration.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- System Status -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">System Status</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>Status</th>
+                                    <td><span class="badge bg-{{ 'success' if health_data.status == 'healthy' else 'danger' }}">
+                                        {{ health_data.status }}
+                                    </span></td>
+                                </tr>
+                                <tr>
+                                    <th>Database</th>
+                                    <td><span class="badge bg-{{ 'success' if health_data.database_status == 'connected' else 'danger' }}">
+                                        {{ health_data.database_status }}
+                                    </span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Usage -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Resource Usage</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <th>CPU Usage</th>
+                                    <td>{{ health_data.cpu_usage }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Memory Usage</th>
+                                    <td>{{ health_data.memory_usage }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Disk Usage</th>
+                                    <td>{{ health_data.disk_usage }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Process Count</th>
+                                    <td>{{ health_data.process_count }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

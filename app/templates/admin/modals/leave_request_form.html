@@ -1,0 +1,28 @@
+{% extends "admin/modals/base_form_modal.html" %}
+
+{% set modal_id = "leaveRequestFormModal" %}
+{% set form_id = "leaveRequestForm" %}
+{% set title = "Leave Request Form" %}
+
+{% block form_fields %}
+<div class="mb-3">
+    {{ form.start_date.label(class="form-label") }}
+    {{ form.start_date(class="form-control datepicker") }}
+</div>
+<div class="mb-3">
+    {{ form.end_date.label(class="form-label") }}
+    {{ form.end_date(class="form-control datepicker") }}
+</div>
+<div class="mb-3">
+    {{ form.leave_type.label(class="form-label") }}
+    {{ form.leave_type(class="form-select") }}
+</div>
+<div class="mb-3">
+    {{ form.reason.label(class="form-label") }}
+    {{ form.reason(class="form-control") }}
+</div>
+<div class="mb-3">
+    {{ form.substitute.label(class="form-label") }}
+    {{ form.substitute(class="form-select select2") }}
+</div>
+{% endblock %} 

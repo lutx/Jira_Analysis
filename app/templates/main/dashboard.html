@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Welcome, {{ current_user.username }}</h1>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Projects</h5>
+                    <p class="card-text">View and manage your projects</p>
+                    <a href="{{ url_for('main.projects') }}" class="btn btn-primary">Go to Projects</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

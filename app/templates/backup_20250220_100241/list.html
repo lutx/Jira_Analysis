@@ -1,0 +1,9 @@
+function deleteWorklog(id) {
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    fetch(`/worklog/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+} 

@@ -1,0 +1,160 @@
+version: 1.0
+settings:
+  role: "10x Senior Full Stack Developer"
+  team_size: 10
+  expertise_level: "expert"
+  code_style: "professional"
+  framework: "flask"
+
+file_structure:
+  root_dir: "app"
+  allowed_paths:
+    - "app/**/*"
+    - "tests/**/*"
+    - "migrations/**/*"
+    - "instance/**/*"
+    - ".cursor/**/*"
+    - ".gitignore"
+    - "README.md"
+    - "requirements.txt"
+    - "setup.py"
+    - "wsgi.py"
+    - "config.py"
+
+directory_rules:
+  templates: "app/templates"
+  static: "app/static"
+  routes: "app/routes"
+  models: "app/models"
+  forms: "app/forms"
+  utils: "app/utils"
+  services: "app/services"
+  config: "app/config"
+  commands: "app/commands"
+  errors: "app/errors"
+
+file_creation_checks:
+  - type: "existence_check"
+    description: "Check if file already exists in app structure"
+    powershell: |
+      function Check-FileExists {
+        param($filePath)
+        $appPath = Join-Path "app" $filePath
+        if (Test-Path $appPath) {
+          Write-Host "File already exists in app structure: $appPath"
+          return $true
+        }
+        return $false
+      }
+
+  - type: "structure_check"
+    description: "Ensure file is created in correct app subdirectory"
+    powershell: |
+      function Check-FileStructure {
+        param($filePath)
+        $fileType = [System.IO.Path]::GetExtension($filePath)
+        switch ($fileType) {
+          ".html" { return $filePath.StartsWith("templates/") }
+          ".css" { return $filePath.StartsWith("static/css/") }
+          ".js" { return $filePath.StartsWith("static/js/") }
+          ".py" {
+            $validPaths = @(
+              "routes/", "models/", "forms/", "utils/",
+              "services/", "config/", "commands/", "errors/"
+            )
+            return ($validPaths | Where-Object { $filePath.StartsWith($_) }).Count -gt 0
+          }
+          default { return $false }
+        }
+      }
+
+code_quality:
+  python:
+    - use_type_hints: true
+    - follow_pep8: true
+    - max_line_length: 88
+    - use_docstrings: true
+    - prefer_functions_over_classes: true
+    - handle_errors_early: true
+    - use_dependency_injection: true
+
+  flask:
+    - use_blueprints: true
+    - use_application_factory: true
+    - proper_error_handling: true
+    - secure_headers: true
+    - csrf_protection: true
+    - proper_session_handling: true
+
+powershell_commands:
+  create_file: |
+    function New-AppFile {
+      param(
+        [string]$filePath,
+        [string]$content
+      )
+      
+      # Check if file should be in app structure
+      if (Check-FileStructure $filePath) {
+        $appPath = Join-Path "app" $filePath
+        
+        # Check if file already exists
+        if (-not (Check-FileExists $filePath)) {
+          # Create directory if it doesn't exist
+          $directory = Split-Path -Parent $appPath
+          if (-not (Test-Path $directory)) {
+            New-Item -ItemType Directory -Path $directory -Force
+          }
+          
+          # Create file
+          Set-Content -Path $appPath -Value $content
+          Write-Host "Created file: $appPath"
+        }
+      } else {
+        Write-Host "Error: File should be created in appropriate app subdirectory"
+      }
+    }
+
+  move_file: |
+    function Move-ToAppStructure {
+      param(
+        [string]$sourcePath,
+        [string]$targetPath
+      )
+      
+      if (Check-FileStructure $targetPath) {
+        $appTargetPath = Join-Path "app" $targetPath
+        
+        # Create directory if it doesn't exist
+        $directory = Split-Path -Parent $appTargetPath
+        if (-not (Test-Path $directory)) {
+          New-Item -ItemType Directory -Path $directory -Force
+        }
+        
+        # Move file
+        Move-Item -Path $sourcePath -Destination $appTargetPath -Force
+        Write-Host "Moved file to: $appTargetPath"
+      } else {
+        Write-Host "Error: Target path should be within app structure"
+      }
+    }
+
+  cleanup: |
+    function Remove-NonAppFiles {
+      Get-ChildItem -Path "." -Recurse -File |
+        Where-Object { 
+          $_.FullName -notlike "*\app\*" -and 
+          $_.FullName -notlike "*\tests\*" -and
+          $_.FullName -notlike "*\migrations\*" -and
+          $_.FullName -notlike "*\instance\*" -and
+          $_.FullName -notlike "*\.cursor\*" -and
+          $_.Name -notmatch "^(README\.md|requirements\.txt|setup\.py|wsgi\.py|config\.py|\.gitignore)$"
+        } |
+        ForEach-Object {
+          Write-Host "Found file outside app structure: $($_.FullName)"
+          $targetPath = $_.FullName.Replace($PWD.Path + "\", "")
+          if (Check-FileStructure $targetPath) {
+            Move-ToAppStructure -sourcePath $_.FullName -targetPath $targetPath
+          }
+        }
+    } 

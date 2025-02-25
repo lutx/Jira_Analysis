@@ -1,0 +1,103 @@
+/* Dashboard layout */
+.dashboard-container {
+    padding: 1.5rem;
+}
+
+/* Stats cards */
+.stats-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+.stats-card .card-title {
+    color: var(--secondary-color);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.stats-card .card-value {
+    color: var(--primary-color);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* Recent activity */
+.activity-table {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.activity-table th {
+    font-weight: 600;
+    color: var(--secondary-color);
+    border-bottom: 2px solid var(--light-color);
+}
+
+.activity-table td {
+    vertical-align: middle;
+    color: var(--dark-color);
+}
+
+/* Charts */
+.chart-container {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.chart-title {
+    color: var(--secondary-color);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Sidebar */
+.sidebar {
+    background: white;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.05);
+    min-height: calc(100vh - 56px);
+}
+
+.sidebar .nav-link {
+    color: var(--secondary-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    margin: 0.25rem 0.5rem;
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--light-color);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Loading states */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+} 

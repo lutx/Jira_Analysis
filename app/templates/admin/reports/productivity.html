@@ -1,0 +1,95 @@
+{% extends "admin/base_admin.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Productivity Report</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary" id="exportReport">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control daterange" id="dateRange">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Team</label>
+                            <select class="form-select select2" id="teamFilter">
+                                <option value="">All Teams</option>
+                                {% for team in teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Project</label>
+                            <select class="form-select select2" id="projectFilter">
+                                <option value="">All Projects</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Productivity Trends</h4>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="productivityTrend"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Team Comparison</h4>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="teamComparison"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Data -->
+                    <div class="table-responsive mt-4">
+                        <table class="table table-striped" id="productivityTable">
+                            <thead>
+                                <tr>
+                                    <th>Team/User</th>
+                                    <th>Project</th>
+                                    <th>Tasks Completed</th>
+                                    <th>Time Spent</th>
+                                    <th>Productivity Score</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/admin/reports/productivity.js') }}"></script>
+{% endblock %} 

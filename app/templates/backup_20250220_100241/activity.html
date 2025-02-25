@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Raport Aktywności - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Raport Aktywności</h5>
+                    <div>
+                        <button class="btn btn-secondary me-2" onclick="exportReport('csv')">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Eksportuj CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="exportReport('pdf')">
+                            <i class="bi bi-file-earmark-pdf"></i> Eksportuj PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtry -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100" onclick="loadReport()">
+                                <i class="bi bi-search"></i> Generuj raport
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Podsumowanie -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Łączna liczba godzin</h6>
+                                    <h2 id="totalHours">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Liczba zadań</h6>
+                                    <h2 id="totalTasks">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Aktywni użytkownicy</h6>
+                                    <h2 id="activeUsers">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Średnio godzin dziennie</h6>
+                                    <h2 id="avgHoursPerDay">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wykresy -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <canvas id="dailyActivityChart"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="userActivityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Szczegółowe dane -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="activityTable">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Użytkownik</th>
+                                    <th>Godziny</th>
+                                    <th>Zadania</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/reports/activity.js"></script>
+{% endblock %} 

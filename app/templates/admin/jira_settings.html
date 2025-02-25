@@ -1,0 +1,89 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Konfiguracja JIRA - Panel Admina{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Konfiguracja JIRA</h1>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label for="jira_url" class="form-label">URL JIRA</label>
+                            <input type="url" class="form-control" id="jira_url" name="jira_url"
+                                   value="{{ config.url if config else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jira_username" class="form-label">Nazwa użytkownika</label>
+                            <input type="text" class="form-control" id="jira_username" name="jira_username"
+                                   value="{{ config.username if config else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="jira_api_token" class="form-label">Token API</label>
+                            <input type="password" class="form-control" id="jira_api_token" name="jira_api_token"
+                                   placeholder="{% if config and config.api_token %}Token już ustawiony{% endif %}">
+                            {% if not config or not config.api_token %}
+                            <div class="form-text">Wprowadź token API JIRA</div>
+                            {% endif %}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Zapisz konfigurację</button>
+                        {% if config %}
+                        <button type="button" class="btn btn-secondary" id="testConnection">Testuj połączenie</button>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pomoc</h5>
+                    <p class="card-text">
+                        Aby skonfigurować połączenie z JIRA, potrzebujesz:
+                        <ul>
+                            <li>URL instancji JIRA</li>
+                            <li>Nazwę użytkownika</li>
+                            <li>Token API (można wygenerować w ustawieniach JIRA)</li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('testConnection')?.addEventListener('click', async function() {
+    try {
+        const response = await fetch('/admin/jira-settings/test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('success', 'Połączenie z JIRA działa poprawnie');
+        } else {
+            showToast('error', data.message || 'Błąd podczas testowania połączenia');
+        }
+    } catch (error) {
+        showToast('error', 'Wystąpił błąd podczas testowania połączenia');
+    }
+});
+</script>
+{% endblock %} 

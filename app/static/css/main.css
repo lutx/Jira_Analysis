@@ -1,0 +1,113 @@
+/* Main styles */
+body {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.container {
+    padding-top: 2rem;
+}
+
+/* Form styles */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+/* Card styles */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid rgba(0,0,0,.125);
+}
+
+/* Button styles */
+.btn {
+    font-weight: 500;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+/* Style dla raportów */
+.report-card {
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.report-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.report-body {
+    padding: 20px;
+}
+
+/* Style dla tabel w raportach */
+.report-table {
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.report-table th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.report-table td, 
+.report-table th {
+    padding: .75rem;
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Style dla filtrów raportów */
+.report-filters {
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+/* Style dla wykresów */
+.report-chart {
+    min-height: 300px;
+    margin-bottom: 20px;
+}
+
+/* Responsywność */
+@media (max-width: 768px) {
+    .report-filters {
+        padding: 10px;
+    }
+    
+    .report-card {
+        margin-bottom: 15px;
+    }
+} 

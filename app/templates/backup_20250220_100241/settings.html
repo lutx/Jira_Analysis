@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Ustawienia Zespołu - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ustawienia Zespołu</h5>
+                </div>
+                <div class="card-body">
+                    <form id="teamSettingsForm">
+                        <!-- Podstawowe informacje -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Podstawowe informacje</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Domyślne godziny pracy dziennie</label>
+                                    <input type="number" class="form-control" id="defaultWorkHours" 
+                                           min="1" max="24" step="0.5" value="8">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Domyślne dni pracy</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="1" id="workDay1" checked>
+                                        <label class="form-check-label">Poniedziałek</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="2" id="workDay2" checked>
+                                        <label class="form-check-label">Wtorek</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="3" id="workDay3" checked>
+                                        <label class="form-check-label">Środa</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="4" id="workDay4" checked>
+                                        <label class="form-check-label">Czwartek</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="5" id="workDay5" checked>
+                                        <label class="form-check-label">Piątek</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="6" id="workDay6">
+                                        <label class="form-check-label">Sobota</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="7" id="workDay7">
+                                        <label class="form-check-label">Niedziela</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Powiadomienia -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Powiadomienia</h6>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="notifyOverwork" checked>
+                                <label class="form-check-label">
+                                    Powiadamiaj o przekroczeniu dziennego limitu godzin
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="notifyUnderwork" checked>
+                                <label class="form-check-label">
+                                    Powiadamiaj o niewystarczającej liczbie godzin
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="notifyTeamLeader" checked>
+                                <label class="form-check-label">
+                                    Wysyłaj raporty do lidera zespołu
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Integracje -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Integracje</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Kanał Slack</label>
+                                <input type="text" class="form-control" id="slackChannel" 
+                                       placeholder="#team-channel">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email grupowy</label>
+                                <input type="email" class="form-control" id="teamEmail" 
+                                       placeholder="team@company.com">
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" onclick="resetSettings()">
+                                Resetuj
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="saveSettings()">
+                                Zapisz ustawienia
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/teams/settings.js"></script>
+{% endblock %} 

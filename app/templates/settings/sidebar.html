@@ -1,0 +1,16 @@
+<div class="list-group">
+    <a href="{{ url_for('settings.profile') }}" 
+       class="list-group-item list-group-item-action {% if request.endpoint == 'settings.profile' %}active{% endif %}">
+        <i class="bi bi-person"></i> Profile
+    </a>
+    <a href="{{ url_for('settings.index') }}" 
+       class="list-group-item list-group-item-action {% if request.endpoint == 'settings.index' %}active{% endif %}">
+        <i class="bi bi-gear"></i> General
+    </a>
+    {% if current_user.has_role('admin') %}
+    <a href="{{ url_for('settings.admin') }}" 
+       class="list-group-item list-group-item-action {% if request.endpoint == 'settings.admin' %}active{% endif %}">
+        <i class="bi bi-shield-lock"></i> Admin
+    </a>
+    {% endif %}
+</div> 

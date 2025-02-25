@@ -1,0 +1,19 @@
+{% macro data_table(headers, data, actions=True) %}
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                {% for header in headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+                {% if actions %}
+                <th class="text-end">Akcje</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {{ caller() }}
+        </tbody>
+    </table>
+</div>
+{% endmacro %} 

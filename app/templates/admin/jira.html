@@ -1,0 +1,72 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Konfiguracja JIRA{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Konfiguracja połączenia z JIRA</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="jiraConfigForm" method="POST" action="{{ url_for('views.save_jira_config_endpoint') }}">
+                {{ form.csrf_token }}
+                
+                <div class="mb-3">
+                    {{ form.jira_url.label(class="form-label") }}
+                    {{ form.jira_url(class="form-control") }}
+                    {% if form.jira_url.errors %}
+                        {% for error in form.jira_url.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.jira_username.label(class="form-label") }}
+                    {{ form.jira_username(class="form-control") }}
+                    {% if form.jira_username.errors %}
+                        {% for error in form.jira_username.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.jira_token.label(class="form-label") }}
+                    {{ form.jira_token(class="form-control") }}
+                    {% if form.jira_token.errors %}
+                        {% for error in form.jira_token.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        Pozostaw puste, aby zachować obecny token
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <button type="button" id="testJiraConnection" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Testuj połączenie
+                    </button>
+                    {{ form.submit(class="btn btn-success") }}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if jira_status %}
+    <div class="alert alert-success mt-3">
+        <i class="bi bi-check-circle"></i> Połączenie z JIRA jest aktywne
+    </div>
+    {% else %}
+    <div class="alert alert-warning mt-3">
+        <i class="bi bi-exclamation-triangle"></i> Brak aktywnego połączenia z JIRA
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ url_for('static', filename='js/admin/jira-settings.js') }}"></script>
+{% endblock %} 

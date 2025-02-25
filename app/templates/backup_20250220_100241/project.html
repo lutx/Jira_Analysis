@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Przypisania - {{ project_key }} - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>Przypisania do projektu: {{ project_key }}</h1>
+                    <p class="text-muted">{{ month_year }}</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
+                        <i class="bi bi-plus"></i> Dodaj przypisanie
+                    </button>
+                </div>
+            </div>
+
+            <!-- Podsumowanie projektu -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="small text-muted">Przypisani użytkownicy</div>
+                            <div class="h4">{{ assignments|length }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Planowane godziny</div>
+                            <div class="h4">{{ total_planned_hours }}h</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Wykonane godziny</div>
+                            <div class="h4">{{ total_actual_hours }}h</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Wykorzystanie</div>
+                            <div class="h4">{{ (total_actual_hours / total_planned_hours * 100)|round }}%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista przypisań -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Email</th>
+                                    <th>Rola</th>
+                                    <th>Planowane h</th>
+                                    <th>Wykonane h</th>
+                                    <th>Różnica</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in assignments %}
+                                <tr>
+                                    <td>{{ assignment.user_name }}</td>
+                                    <td>{{ assignment.email }}</td>
+                                    <td>{{ assignment.role_name }}</td>
+                                    <td>{{ assignment.planned_hours }}h</td>
+                                    <td>{{ (assignment.actual_hours / 3600) | round(1) }}h</td>
+                                    <td>
+                                        {% set diff = (assignment.actual_hours / 3600) - assignment.planned_hours %}
+                                        <span class="badge bg-{{ 'success' if diff >= 0 else 'danger' }}">
+                                            {{ diff | round(1) }}h
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" 
+                                                onclick="editAssignment('{{ assignment.id }}')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="deleteAssignment('{{ assignment.id }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania przypisania -->
+<div class="modal fade" id="addAssignmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('assignments.create') }}" method="post">
+                {{ form.csrf_token }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Dodaj przypisanie</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="project_key" value="{{ project_key }}">
+                    <input type="hidden" name="month_year" value="{{ month_year }}">
+                    
+                    <div class="mb-3">
+                        <label for="user_name" class="form-label">Użytkownik</label>
+                        <select class="form-select" id="user_name" name="user_name" required>
+                            {% for user in available_users %}
+                            <option value="{{ user.username }}">{{ user.username }} ({{ user.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role_id" class="form-label">Rola</label>
+                        <select class="form-select" id="role_id" name="role_id" required>
+                            {% for role in available_roles %}
+                            <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="planned_hours" class="form-label">Planowane godziny</label>
+                        <input type="number" class="form-control" id="planned_hours" 
+                               name="planned_hours" min="0" step="0.5" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+async function deleteAssignment(assignmentId) {
+    if (!confirm('Czy na pewno chcesz usunąć to przypisanie?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/assignments/${assignmentId}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Błąd podczas usuwania przypisania');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Błąd podczas usuwania przypisania');
+    }
+}
+
+function editAssignment(assignmentId) {
+    // TODO: Implementacja edycji przypisania
+    alert('Funkcja w trakcie implementacji');
+}
+</script>
+{% endblock %} 

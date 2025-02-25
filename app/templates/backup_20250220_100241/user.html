@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Przypisania - {{ username }} - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1>Przypisania: {{ username }}</h1>
+                    <p class="text-muted">{{ month_year }}</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAssignmentModal">
+                        <i class="bi bi-plus"></i> Dodaj przypisanie
+                    </button>
+                    <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#availabilityModal">
+                        <i class="bi bi-calendar"></i> Dostępność
+                    </button>
+                </div>
+            </div>
+
+            <!-- Podsumowanie dostępności -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="small text-muted">Dni robocze</div>
+                            <div class="h4">{{ assignments[0].working_days or 0 }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Urlopy</div>
+                            <div class="h4">{{ assignments[0].leave_days or 0 }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Święta</div>
+                            <div class="h4">{{ assignments[0].holidays or 0 }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="small text-muted">Dostępne godziny</div>
+                            <div class="h4">{{ assignments[0].total_capacity or 0 }}h</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista przypisań -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Portfolio</th>
+                                    <th>Projekt</th>
+                                    <th>Rola</th>
+                                    <th>Planowane h</th>
+                                    <th>Wykonane h</th>
+                                    <th>Różnica</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for assignment in assignments %}
+                                <tr>
+                                    <td>{{ assignment.portfolio_name }}</td>
+                                    <td>{{ assignment.project_key }}</td>
+                                    <td>{{ assignment.role_name }}</td>
+                                    <td>{{ assignment.planned_hours }}h</td>
+                                    <td>{{ (assignment.actual_hours / 3600) | round(1) }}h</td>
+                                    <td>
+                                        {% set diff = (assignment.actual_hours / 3600) - assignment.planned_hours %}
+                                        <span class="badge bg-{{ 'success' if diff >= 0 else 'danger' }}">
+                                            {{ diff | round(1) }}h
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" 
+                                                onclick="editAssignment('{{ assignment.id }}')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" 
+                                                onclick="deleteAssignment('{{ assignment.id }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania przypisania -->
+<div class="modal fade" id="addAssignmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('assignments.create') }}" method="post">
+                {{ form.csrf_token }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Dodaj przypisanie</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="user_name" value="{{ username }}">
+                    <input type="hidden" name="month_year" value="{{ month_year }}">
+                    
+                    <div class="mb-3">
+                        <label for="project_key" class="form-label">Projekt</label>
+                        <select class="form-select" id="project_key" name="project_key" required>
+                            {% for project in available_projects %}
+                            <option value="{{ project.key }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role_id" class="form-label">Rola</label>
+                        <select class="form-select" id="role_id" name="role_id" required>
+                            {% for role in available_roles %}
+                            <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="planned_hours" class="form-label">Planowane godziny</label>
+                        <input type="number" class="form-control" id="planned_hours" 
+                               name="planned_hours" min="0" step="0.5" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Dodaj</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dostępności -->
+<div class="modal fade" id="availabilityModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="availabilityForm">
+                {{ form.csrf_token }}
+                <div class="modal-header">
+                    <h5 class="modal-title">Dostępność użytkownika</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="username" value="{{ username }}">
+                    <input type="hidden" name="month_year" value="{{ month_year }}">
+                    
+                    <div class="mb-3">
+                        <label for="working_days" class="form-label">Dni robocze</label>
+                        <input type="number" class="form-control" id="working_days" 
+                               name="working_days" min="0" max="31" 
+                               value="{{ assignments[0].working_days or 0 }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="holidays" class="form-label">Święta</label>
+                        <input type="number" class="form-control" id="holidays" 
+                               name="holidays" min="0" max="31" 
+                               value="{{ assignments[0].holidays or 0 }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="leave_days" class="form-label">Dni urlopowe</label>
+                        <input type="number" class="form-control" id="leave_days" 
+                               name="leave_days" min="0" max="31" 
+                               value="{{ assignments[0].leave_days or 0 }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Zapisz</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.getElementById('availabilityForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const response = await fetch('{{ url_for("assignments.update_availability") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            },
+            body: new FormData(this)
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Błąd podczas aktualizacji dostępności');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Błąd podczas aktualizacji dostępności');
+    }
+});
+
+async function deleteAssignment(assignmentId) {
+    if (!confirm('Czy na pewno chcesz usunąć to przypisanie?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/assignments/${assignmentId}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Błąd podczas usuwania przypisania');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Błąd podczas usuwania przypisania');
+    }
+}
+
+function editAssignment(assignmentId) {
+    // TODO: Implementacja edycji przypisania
+    alert('Funkcja w trakcie implementacji');
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Urlopy zespołu - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Urlopy zespołu</h1>
+                <div>
+                    <a href="{{ url_for('leaves.calendar', team_id=team_id) }}" class="btn btn-secondary">
+                        <i class="bi bi-calendar3"></i> Kalendarz zespołu
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtry -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form class="row g-3" method="get">
+                        <div class="col-md-4">
+                            <label for="start_date" class="form-label">Data od</label>
+                            <input type="date" class="form-control" id="start_date" 
+                                   name="start_date" value="{{ request.args.get('start_date', '') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="end_date" class="form-label">Data do</label>
+                            <input type="date" class="form-control" id="end_date" 
+                                   name="end_date" value="{{ request.args.get('end_date', '') }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Filtruj
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista wniosków -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Data od</th>
+                                    <th>Data do</th>
+                                    <th>Typ</th>
+                                    <th>Status</th>
+                                    <th>Zatwierdzający</th>
+                                    <th>Data złożenia</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for leave in leaves %}
+                                <tr>
+                                    <td>{{ leave.user_name }}</td>
+                                    <td>{{ leave.start_date }}</td>
+                                    <td>{{ leave.end_date }}</td>
+                                    <td>{{ leave.leave_type }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 
+                                            'success' if leave.status == 'approved' 
+                                            else 'danger' if leave.status == 'rejected'
+                                            else 'warning' 
+                                        }}">
+                                            {{ leave.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ leave.approved_by_name or '-' }}</td>
+                                    <td>{{ leave.created_at }}</td>
+                                    <td>
+                                        {% if leave.status == 'pending' %}
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-success" 
+                                                    onclick="updateStatus('{{ leave.id }}', 'approved')">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" 
+                                                    onclick="updateStatus('{{ leave.id }}', 'rejected')">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+async function updateStatus(leaveId, status) {
+    if (!confirm(`Czy na pewno chcesz ${status == 'approved' ? 'zatwierdzić' : 'odrzucić'} ten wniosek?`)) {
+        return;
+    }
+    
+    try {
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        const response = await fetch(`/leaves/${leaveId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ status: status })
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.message || 'Błąd podczas aktualizacji statusu');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Błąd podczas aktualizacji statusu');
+    }
+}
+
+// Walidacja dat
+document.getElementById('start_date').addEventListener('change', function() {
+    document.getElementById('end_date').min = this.value;
+});
+
+document.getElementById('end_date').addEventListener('change', function() {
+    document.getElementById('start_date').max = this.value;
+});
+</script>
+{% endblock %} 

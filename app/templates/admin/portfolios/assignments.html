@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Portfolio Assignments{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Portfolio Assignments</h1>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    {% if portfolios %}
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="assignmentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Portfolio Name</th>
+                                        <th>Projects Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for portfolio in portfolios %}
+                                    <tr id="portfolio-{{ portfolio.id }}">
+                                        <td>{{ portfolio.name }}</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                {{ portfolio.projects|length }} projects
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="{{ url_for('admin.edit_portfolio_assignments', portfolio_id=portfolio.id) }}" 
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-edit"></i> Edit Assignments
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No portfolios available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable
+    const assignmentsTable = $('#assignmentsTable').DataTable({
+        pageLength: 10,
+        order: [[0, 'asc']]
+    });
+});
+</script>
+{% endblock %} 

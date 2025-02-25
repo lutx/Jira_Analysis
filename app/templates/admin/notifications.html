@@ -1,0 +1,174 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <h1>Notifications</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="notificationFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" name="type">
+                        <option value="">All Types</option>
+                        <option value="system">System</option>
+                        <option value="alert">Alert</option>
+                        <option value="task">Task</option>
+                        <option value="message">Message</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="unread">Unread</option>
+                        <option value="read">Read</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="mb-4">
+        <button class="btn btn-primary" onclick="markAllAsRead()">
+            <i class="bi bi-check-all"></i> Mark All as Read
+        </button>
+        <button class="btn btn-danger" onclick="clearAll()">
+            <i class="bi bi-trash"></i> Clear All
+        </button>
+    </div>
+    
+    <!-- Notifications List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="list-group">
+                {% for notification in notifications %}
+                <div class="list-group-item list-group-item-action {% if not notification.is_read %}active{% endif %}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <h5 class="mb-1">
+                            <i class="bi {{ notification.icon_class }} me-2"></i>
+                            {{ notification.title }}
+                        </h5>
+                        <small class="text-muted">{{ notification.created_at|timeago }}</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Type: <span class="badge bg-{{ notification.type_class }}">{{ notification.type }}</span>
+                        </small>
+                        <div class="btn-group">
+                            {% if notification.action_url %}
+                            <a href="{{ notification.action_url }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-box-arrow-up-right"></i> View
+                            </a>
+                            {% endif %}
+                            {% if not notification.is_read %}
+                            <button class="btn btn-sm btn-success" onclick="markAsRead('{{ notification.id }}')">
+                                <i class="bi bi-check"></i> Mark as Read
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-danger" onclick="deleteNotification('{{ notification.id }}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-bell-slash display-4"></i>
+                    <p class="mt-2">No notifications found</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Settings Modal -->
+<div class="modal fade" id="notificationSettingsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notification Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="notificationSettingsForm">
+                    <div class="mb-3">
+                        <label class="form-label">Email Notifications</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="email_enabled" id="emailEnabled">
+                            <label class="form-check-label" for="emailEnabled">
+                                Enable email notifications
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Desktop Notifications</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="desktop_enabled" id="desktopEnabled">
+                            <label class="form-check-label" for="desktopEnabled">
+                                Enable desktop notifications
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notification Types</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="system_notifications" id="systemNotifications">
+                            <label class="form-check-label" for="systemNotifications">
+                                System notifications
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="alert_notifications" id="alertNotifications">
+                            <label class="form-check-label" for="alertNotifications">
+                                Alert notifications
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="task_notifications" id="taskNotifications">
+                            <label class="form-check-label" for="taskNotifications">
+                                Task notifications
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="message_notifications" id="messageNotifications">
+                            <label class="form-check-label" for="messageNotifications">
+                                Message notifications
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNotificationSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/notifications.js') }}"></script>
+{% endblock %} 

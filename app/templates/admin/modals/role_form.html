@@ -1,0 +1,20 @@
+{% extends "admin/modals/base_form_modal.html" %}
+
+{% set modal_id = "roleFormModal" %}
+{% set form_id = "roleForm" %}
+{% set title = "Role Form" %}
+
+{% block form_fields %}
+<div class="mb-3">
+    {{ form.name.label(class="form-label") }}
+    {{ form.name(class="form-control") }}
+</div>
+<div class="mb-3">
+    {{ form.description.label(class="form-label") }}
+    {{ form.description(class="form-control") }}
+</div>
+<div class="mb-3">
+    {{ form.permissions.label(class="form-label") }}
+    {{ form.permissions(class="form-select select2") }}
+</div>
+{% endblock %} 

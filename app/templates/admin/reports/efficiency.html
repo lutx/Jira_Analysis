@@ -1,0 +1,139 @@
+{% extends "admin/base_admin.html" %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Efficiency Report</h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary" id="exportReport">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control daterange" id="dateRange">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Team</label>
+                            <select class="form-select select2" id="teamFilter">
+                                <option value="">All Teams</option>
+                                {% for team in teams %}
+                                <option value="{{ team.id }}">{{ team.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Metric</label>
+                            <select class="form-select" id="metricFilter">
+                                <option value="time">Time Efficiency</option>
+                                <option value="cost">Cost Efficiency</option>
+                                <option value="resource">Resource Efficiency</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <h5>Average Efficiency</h5>
+                                    <h3 id="avgEfficiency">{{ avg_efficiency }}%</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5>Top Performer</h5>
+                                    <h3 id="topPerformer">{{ top_performer }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h5>Areas for Improvement</h5>
+                                    <h3 id="improvementAreas">{{ improvement_areas }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Efficiency Trends</h4>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="efficiencyTrend"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Team Comparison</h4>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="teamComparison"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Data -->
+                    <div class="table-responsive mt-4">
+                        <table class="table table-striped" id="efficiencyTable">
+                            <thead>
+                                <tr>
+                                    <th>Team/Member</th>
+                                    <th>Time Efficiency</th>
+                                    <th>Cost Efficiency</th>
+                                    <th>Resource Efficiency</th>
+                                    <th>Overall Score</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in efficiency_data %}
+                                <tr>
+                                    <td>{{ entry.name }}</td>
+                                    <td>{{ entry.time_efficiency }}%</td>
+                                    <td>{{ entry.cost_efficiency }}%</td>
+                                    <td>{{ entry.resource_efficiency }}%</td>
+                                    <td>{{ entry.overall_score }}%</td>
+                                    <td>
+                                        <span class="badge bg-{{ entry.trend_color }}">
+                                            {{ entry.trend }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/admin/reports/efficiency.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/admin/reports/efficiency.js') }}"></script>
+{% endblock %} 

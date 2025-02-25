@@ -1,0 +1,144 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Portfolio Analysis{% endblock %}
+
+{% block head %}
+{{ super() }}
+<!-- No Chart.js CSS needed - it's a JavaScript-only library -->
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Portfolio Analysis</h1>
+                <div class="form-group" style="width: 300px;">
+                    <select id="portfolioSelect" class="form-select" onchange="updateAnalysis()">
+                        <option value="">-- Select Portfolio --</option>
+                        {% for portfolio in portfolios %}
+                        <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Summary Cards -->
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Total Hours</h5>
+                            <h3 class="mb-0">{{ analysis_data.total_hours }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Planned Hours</h5>
+                            <h3 class="mb-0">{{ analysis_data.planned_hours }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Actual Hours</h5>
+                            <h3 class="mb-0">{{ analysis_data.actual_hours }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Discrepancy</h5>
+                            <h3 class="mb-0">{{ analysis_data.discrepancy }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Chart -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Hours Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="analysisChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Use the latest version of Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('analysisChart').getContext('2d');
+    const analysisChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Planned Hours', 'Actual Hours'],
+            datasets: [{
+                label: 'Hours',
+                data: [{{ analysis_data.planned_hours }}, {{ analysis_data.actual_hours }}],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.6)',  // success green
+                    'rgba(23, 162, 184, 0.6)'   // info blue
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(23, 162, 184, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+
+    window.updateAnalysis = function() {
+        const portfolioId = document.getElementById('portfolioSelect').value;
+        if (!portfolioId) return;
+
+        fetch(`/admin/portfolios/${portfolioId}/analysis-data`)
+            .then(response => response.json())
+            .then(data => {
+                // Update summary cards
+                document.querySelector('.bg-primary h3').textContent = data.total_hours;
+                document.querySelector('.bg-success h3').textContent = data.planned_hours;
+                document.querySelector('.bg-info h3').textContent = data.actual_hours;
+                document.querySelector('.bg-warning h3').textContent = data.discrepancy;
+
+                // Update chart
+                analysisChart.data.datasets[0].data = [data.planned_hours, data.actual_hours];
+                analysisChart.update();
+            })
+            .catch(error => {
+                console.error('Error fetching analysis data:', error);
+                alert('Error updating analysis data');
+            });
+    };
+});
+</script>
+{% endblock %} 

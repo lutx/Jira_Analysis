@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Statystyki Projektu</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .summary {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .chart {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Statystyki Projektu</h1>
+    
+    <div class="info">
+        <p><strong>Zespół:</strong> {{ team.name }}</p>
+        <p><strong>Projekt:</strong> {{ project_key }}</p>
+        <p><strong>Okres:</strong> {{ start_date.strftime('%Y-%m-%d') }} - {{ end_date.strftime('%Y-%m-%d') }}</p>
+    </div>
+    
+    <div class="summary">
+        <h2>Podsumowanie</h2>
+        <p>Łączna liczba godzin: {{ stats.total_hours }}</p>
+        <p>Łączna liczba zadań: {{ stats.total_tasks }}</p>
+        <p>Średnia liczba godzin na użytkownika: {{ "%.2f"|format(stats.avg_hours_per_user) }}</p>
+    </div>
+    
+    <h2>Statystyki Użytkowników</h2>
+    <table>
+        <tr>
+            <th>Użytkownik</th>
+            <th>Godziny</th>
+            <th>Zadania</th>
+            <th>Udział (%)</th>
+            <th>Status</th>
+        </tr>
+        {% for user, data in stats.users.items()|sort %}
+        <tr>
+            <td>{{ user }}</td>
+            <td>{{ data.hours }}</td>
+            <td>{{ data.tasks }}</td>
+            <td>{{ "%.1f"|format(data.percentage) }}%</td>
+            <td>{{ data.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    <div class="footer">
+        <p>Wygenerowano: {{ datetime.now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    </div>
+</body>
+</html> 

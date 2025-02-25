@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>System Settings</h1>
+    
+    <!-- General Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">General Settings</h5>
+        </div>
+        <div class="card-body">
+            <form id="generalSettingsForm">
+                {{ form.general.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.general.site_name.label(class="form-label") }}
+                    {{ form.general.site_name(class="form-control") }}
+                    <div class="form-text">Name displayed in the browser title and header</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.general.items_per_page.label(class="form-label") }}
+                    {{ form.general.items_per_page(class="form-control") }}
+                    <div class="form-text">Default number of items to display per page</div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.general.enable_notifications(class="form-check-input") }}
+                        {{ form.general.enable_notifications.label(class="form-check-label") }}
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save General Settings
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Email Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Email Settings</h5>
+        </div>
+        <div class="card-body">
+            <form id="emailSettingsForm">
+                {{ form.email.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.email.smtp_server.label(class="form-label") }}
+                    {{ form.email.smtp_server(class="form-control") }}
+                    <div class="form-text">SMTP server address (e.g., smtp.gmail.com)</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.email.smtp_port.label(class="form-label") }}
+                    {{ form.email.smtp_port(class="form-control") }}
+                    <div class="form-text">SMTP server port (e.g., 587 for TLS)</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.email.smtp_username.label(class="form-label") }}
+                    {{ form.email.smtp_username(class="form-control") }}
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.email.smtp_password.label(class="form-label") }}
+                    {{ form.email.smtp_password(class="form-control") }}
+                    <div class="form-text">Leave blank to keep existing password</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.email.default_sender.label(class="form-label") }}
+                    {{ form.email.default_sender(class="form-control") }}
+                    <div class="form-text">Default "From" address for system emails</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Email Settings
+                </button>
+                <button type="button" class="btn btn-info" onclick="testEmailSettings()">
+                    <i class="bi bi-envelope"></i> Test Email Settings
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Security Settings -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Security Settings</h5>
+        </div>
+        <div class="card-body">
+            <form id="securitySettingsForm">
+                {{ form.security.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.security.session_timeout.label(class="form-label") }}
+                    {{ form.security.session_timeout(class="form-control") }}
+                    <div class="form-text">Session timeout in minutes (0 for no timeout)</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.security.password_expiry.label(class="form-label") }}
+                    {{ form.security.password_expiry(class="form-control") }}
+                    <div class="form-text">Password expiry in days (0 for no expiry)</div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.security.force_ssl(class="form-check-input") }}
+                        {{ form.security.force_ssl.label(class="form-check-label") }}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.security.enable_2fa(class="form-check-input") }}
+                        {{ form.security.enable_2fa.label(class="form-check-label") }}
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Security Settings
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Backup Settings -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Backup Settings</h5>
+        </div>
+        <div class="card-body">
+            <form id="backupSettingsForm">
+                {{ form.backup.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.backup.backup_enabled.label(class="form-label") }}
+                    <div class="form-check">
+                        {{ form.backup.backup_enabled(class="form-check-input") }}
+                        Enable automatic backups
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.backup.backup_interval.label(class="form-label") }}
+                    {{ form.backup.backup_interval(class="form-select") }}
+                    <div class="form-text">How often to create backups</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.backup.backup_retention.label(class="form-label") }}
+                    {{ form.backup.backup_retention(class="form-control") }}
+                    <div class="form-text">Number of backups to keep (0 for unlimited)</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.backup.backup_path.label(class="form-label") }}
+                    {{ form.backup.backup_path(class="form-control") }}
+                    <div class="form-text">Path where backups will be stored</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Backup Settings
+                </button>
+                <button type="button" class="btn btn-success" onclick="createBackup()">
+                    <i class="bi bi-download"></i> Create Backup Now
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal fade" id="testEmailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Email Settings</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testEmailForm">
+                    <div class="mb-3">
+                        <label class="form-label">Test Email Address</label>
+                        <input type="email" class="form-control" name="test_email" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="sendTestEmail()">Send Test Email</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/system_settings.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Statystyki Projektu - {{ project_key }} - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Statystyki projektu: {{ project_key }}</h5>
+                    <div>
+                        <button class="btn btn-secondary me-2" onclick="exportStats('csv')">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Eksportuj CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="exportStats('pdf')">
+                            <i class="bi bi-file-earmark-pdf"></i> Eksportuj PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtry -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="loadStats()">
+                                <i class="bi bi-search"></i> Odśwież
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Podsumowanie -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Łączna liczba godzin</h6>
+                                    <h3 id="totalHours">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Łączna liczba zadań</h6>
+                                    <h3 id="totalTasks">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Średnia liczba godzin na użytkownika</h6>
+                                    <h3 id="avgHoursPerUser">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wykresy -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <canvas id="hoursChart"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="tasksChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Szczegółowe dane -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="statsTable">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Godziny</th>
+                                    <th>Zadania</th>
+                                    <th>Udział (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const teamId = {{ team_id }};
+    const projectKey = '{{ project_key }}';
+</script>
+<script src="/static/js/teams/project_stats.js"></script>
+{% endblock %} 

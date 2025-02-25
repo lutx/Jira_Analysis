@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>System Settings</h1>
+    
+    <div class="row">
+        <!-- JIRA Configuration -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">JIRA Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form id="jiraConfigForm">
+                        {{ form.jira_config.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.jira_config.url.label(class="form-label") }}
+                            {{ form.jira_config.url(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.jira_config.username.label(class="form-label") }}
+                            {{ form.jira_config.username(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.jira_config.api_token.label(class="form-label") }}
+                            {{ form.jira_config.api_token(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.jira_config.project_key.label(class="form-label") }}
+                            {{ form.jira_config.project_key(class="form-control") }}
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveJiraConfig()">Save</button>
+                        <button type="button" class="btn btn-info" onclick="testJiraConnection()">Test Connection</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">System Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="systemSettingsForm">
+                        {{ form.system_settings.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.system_settings.site_name.label(class="form-label") }}
+                            {{ form.system_settings.site_name(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.system_settings.items_per_page.label(class="form-label") }}
+                            {{ form.system_settings.items_per_page(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.system_settings.enable_notifications.label(class="form-label") }}
+                            {{ form.system_settings.enable_notifications(class="form-check-input") }}
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Email Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Email Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form id="emailSettingsForm">
+                        {{ form.email_settings.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.email_settings.smtp_server.label(class="form-label") }}
+                            {{ form.email_settings.smtp_server(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email_settings.smtp_port.label(class="form-label") }}
+                            {{ form.email_settings.smtp_port(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email_settings.smtp_username.label(class="form-label") }}
+                            {{ form.email_settings.smtp_username(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email_settings.smtp_password.label(class="form-label") }}
+                            {{ form.email_settings.smtp_password(class="form-control") }}
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="saveEmailSettings()">Save</button>
+                        <button type="button" class="btn btn-info" onclick="testEmailSettings()">Test Email</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/settings.js') }}"></script>
+{% endblock %} 

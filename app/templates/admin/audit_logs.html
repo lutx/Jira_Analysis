@@ -1,0 +1,162 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <h1>Audit Logs</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="auditFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Action Type</label>
+                    <select class="form-select" name="action_type">
+                        <option value="">All Actions</option>
+                        <option value="CREATE">Create</option>
+                        <option value="UPDATE">Update</option>
+                        <option value="DELETE">Delete</option>
+                        <option value="LOGIN">Login</option>
+                        <option value="LOGOUT">Logout</option>
+                        <option value="EXPORT">Export</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">User</label>
+                    <select class="form-select" name="user_id">
+                        <option value="">All Users</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.display_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Audit Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Actions</h6>
+                    <h3 class="mb-0">{{ total_actions }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Unique Users</h6>
+                    <h3 class="mb-0">{{ unique_users }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Most Common Action</h6>
+                    <h3 class="mb-0">{{ most_common_action }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Today's Actions</h6>
+                    <h3 class="mb-0">{{ todays_actions }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audit Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Audit Entries</h5>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportAudit('excel')">
+                    <i class="bi bi-file-excel"></i> Excel
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportAudit('pdf')">
+                    <i class="bi bi-file-pdf"></i> PDF
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="exportAudit('csv')">
+                    <i class="bi bi-file-text"></i> CSV
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="auditTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>IP Address</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in audit_entries %}
+                        <tr>
+                            <td>{{ entry.timestamp }}</td>
+                            <td>{{ entry.user.display_name }}</td>
+                            <td>
+                                <span class="badge bg-{{ entry.action_class }}">
+                                    {{ entry.action }}
+                                </span>
+                            </td>
+                            <td>{{ entry.resource }}</td>
+                            <td>{{ entry.ip_address }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info" onclick="viewAuditDetails({{ entry.id }})">
+                                    <i class="bi bi-info-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audit Details Modal -->
+<div class="modal fade" id="auditDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Audit Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="auditDetailsContent">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/audit_logs.js') }}"></script>
+{% endblock %} 

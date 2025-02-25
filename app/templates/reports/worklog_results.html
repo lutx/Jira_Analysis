@@ -1,0 +1,57 @@
+{% if grouped_worklogs %}
+    {% for project_key, users in grouped_worklogs.items() %}
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                Projekt: 
+                <a href="{{ jira_url }}/projects/{{ project_key }}" target="_blank" class="text-white">
+                    {{ project_key }}
+                </a>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% for username, logs in users.items() %}
+            <div class="mb-4">
+                <h6 class="border-bottom pb-2">Użytkownik: {{ username }}</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Zadanie</th>
+                                <th>Czas (h)</th>
+                                <th>Data</th>
+                                <th>Opis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>
+                                    <a href="{{ jira_url }}/browse/{{ log.issue.jira_key }}" target="_blank">
+                                        {{ log.issue.jira_key }} - {{ log.issue.summary }}
+                                    </a>
+                                </td>
+                                <td>{{ "%.2f"|format(log.time_spent_hours) }}</td>
+                                <td>{{ log.work_date|datetime }}</td>
+                                <td>{{ log.description }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="table-info">
+                                <td colspan="1"><strong>Suma</strong></td>
+                                <td colspan="3">
+                                    <strong>{{ "%.2f"|format(logs|sum(attribute='time_spent_hours')) }} h</strong>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="alert alert-info">
+        Brak wpisów worklog w wybranym okresie.
+    </div>
+{% endif %} 

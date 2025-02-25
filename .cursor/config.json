@@ -1,0 +1,15 @@
+﻿{
+    "projectType": "flask",
+    "rulesFile": ".cursor/rules.mdc",
+    "validateStructure": true,
+    "enforceRules": true,
+    "autoFormat": true,
+    "suggestionsLevel": "strict",
+    "codeQuality": {
+        "python": {
+            "linter": "flake8",
+            "formatter": "black",
+            "typeChecker": "mypy"
+        }
+    }
+}

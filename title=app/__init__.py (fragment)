@@ -1,0 +1,39 @@
+from app.commands.init_db import init_db_command, check_roles_command
+from app.commands.create_superadmin import create_superadmin_command
+
+def create_app(config_name: str = None):
+    app = Flask(__name__, instance_relative_config=True)
+    
+    if config_name is None:
+        config_name = os.getenv('FLASK_ENV', 'development')
+    app.config.from_object(configs[config_name])
+    
+    # Upewnij się, że instancyjne foldery istnieją
+    os.makedirs(app.instance_path, exist_ok=True)
+    os.makedirs(os.path.join(app.instance_path, 'flask_session'), exist_ok=True)
+    
+    # Inicjalizacja rozszerzeń (importowane z app/extensions.py)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    login_manager.init_app(app)
+    csrf.init_app(app)
+    session.init_app(app)
+    cache.init_app(app)
+    
+    # Konfiguracja login_managera
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Proszę się zalogować, aby uzyskać dostęp.'
+    login_manager.login_message_category = 'info'
+    
+    # Rejestracja blueprintów
+    from app.routes.auth import auth_bp
+    from app.routes.main import main_bp
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(main_bp)
+    
+    # Rejestracja komend CLI wewnątrz funkcji create_app
+    app.cli.add_command(init_db_command)
+    app.cli.add_command(check_roles_command)
+    app.cli.add_command(create_superadmin_command)
+    
+    return app 

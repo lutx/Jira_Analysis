@@ -1,0 +1,47 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Panel Administracyjny - JIRA Analysis{% endblock %}
+
+{% block admin_content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Użytkownicy</h5>
+                <p class="card-text display-4">{{ stats.users_count }}</p>
+                <a href="{{ url_for('admin.users') }}" class="btn btn-primary">Zarządzaj</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Zespoły</h5>
+                <p class="card-text display-4">{{ stats.teams_count }}</p>
+                <a href="{{ url_for('admin.teams') }}" class="btn btn-primary">Zarządzaj</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Projekty</h5>
+                <p class="card-text display-4">{{ stats.projects_count }}</p>
+                <a href="{{ url_for('admin.projects') }}" class="btn btn-primary">Zarządzaj</a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">JIRA</h5>
+                <p class="card-text">{{ 'Połączono' if jira_connected else 'Brak połączenia' }}</p>
+                <a href="{{ url_for('admin.jira_settings') }}" class="btn btn-primary">Konfiguracja</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Reports</h1>
+    
+    <div class="row">
+        <!-- Workload Report -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Workload Analysis</h5>
+                    <p class="card-text">Analyze team and user workload distribution.</p>
+                    <a href="{{ url_for('admin.workload_report') }}" class="btn btn-primary">
+                        <i class="bi bi-bar-chart"></i> View Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Role Distribution Report -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Role Distribution</h5>
+                    <p class="card-text">Analyze role distribution across teams and projects.</p>
+                    <a href="{{ url_for('admin.role_distribution_report') }}" class="btn btn-primary">
+                        <i class="bi bi-pie-chart"></i> View Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Availability Report -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">User Availability</h5>
+                    <p class="card-text">View user availability and leave schedules.</p>
+                    <a href="{{ url_for('admin.availability_report') }}" class="btn btn-primary">
+                        <i class="bi bi-calendar"></i> View Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Shadow Work Report -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Shadow Work Analysis</h5>
+                    <p class="card-text">Analyze untracked and support work.</p>
+                    <a href="{{ url_for('admin.shadow_work_report') }}" class="btn btn-primary">
+                        <i class="bi bi-clock-history"></i> View Report
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Custom Reports -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Custom Reports</h5>
+                    <p class="card-text">Create and view custom reports.</p>
+                    <a href="{{ url_for('admin.custom_reports') }}" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-text"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Options -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Export Options</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <button class="btn btn-success w-100" onclick="exportReport('excel')">
+                        <i class="bi bi-file-excel"></i> Export to Excel
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-danger w-100" onclick="exportReport('pdf')">
+                        <i class="bi bi-file-pdf"></i> Export to PDF
+                    </button>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-info w-100" onclick="exportReport('csv')">
+                        <i class="bi bi-file-text"></i> Export to CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin/reports.js') }}"></script>
+{% endblock %} 

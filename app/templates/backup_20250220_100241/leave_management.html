@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <h1>Leave Management</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="leaveFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Employee</label>
+                    <select class="form-select" name="user_id">
+                        <option value="">All Employees</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}">{{ user.display_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Leave Requests Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="leaveTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Type</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Days</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in leave_requests %}
+                        <tr>
+                            <td>{{ request.user.display_name }}</td>
+                            <td>{{ request.type }}</td>
+                            <td>{{ request.start_date|datetime('%Y-%m-%d') }}</td>
+                            <td>{{ request.end_date|datetime('%Y-%m-%d') }}</td>
+                            <td>{{ request.days }}</td>
+                            <td>
+                                <span class="badge bg-{{ request.status_class }}">
+                                    {{ request.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if request.status == 'pending' %}
+                                    <button class="btn btn-success" onclick="approveLeave({{ request.id }})">
+                                        <i class="bi bi-check"></i>
+                                    </button>
+                                    <button class="btn btn-danger" onclick="rejectLeave({{ request.id }})">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-info" onclick="viewLeaveDetails({{ request.id }})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/leave_management.js') }}"></script>
+{% endblock %} 

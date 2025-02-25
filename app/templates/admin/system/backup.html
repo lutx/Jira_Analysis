@@ -1,0 +1,50 @@
+﻿{% extends "admin/base.html" %}
+
+{% block title %}Backup & Restore{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">{{ page_title|default('Backup & Restore') }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>Create Backup</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form id="backupForm" method="POST" action="{{ url_for('admin.create_backup') }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-primary">Create Backup</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>Restore Backup</h4>
+                                </div>
+                                <div class="card-body">
+                                    <form id="restoreForm" method="POST" action="{{ url_for('admin.restore_backup') }}" enctype="multipart/form-data">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="form-group">
+                                            <input type="file" class="form-control" name="backup_file" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-warning">Restore Backup</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

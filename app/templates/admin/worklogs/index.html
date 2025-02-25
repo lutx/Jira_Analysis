@@ -1,0 +1,428 @@
+{% extends "admin/base_admin.html" %}
+
+{% block head %}
+{{ super() }}
+<!-- Required libraries -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+{% endblock %}
+
+{% block title %}Worklog Management{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Worklog Management</h1>
+                <button class="btn btn-primary" id="syncWorklogs">
+                    <i class="fas fa-sync"></i> Sync Worklogs
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control" id="dateRange" name="dateRange">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">User</label>
+                            <select class="form-select" id="userFilter" name="user">
+                                <option value="">All Users</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.display_name or user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Project</label>
+                            <select class="form-select" id="projectFilter" name="project">
+                                <option value="">All Projects</option>
+                                {% for project in projects %}
+                                <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Hours</h6>
+                            <h3 id="totalHours" class="mb-0">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Total Worklogs</h6>
+                            <h3 id="totalWorklogs" class="mb-0">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Active Users</h6>
+                            <h3 id="activeUsers" class="mb-0">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <h6 class="card-title">Average Hours/Day</h6>
+                            <h3 id="avgHoursPerDay" class="mb-0">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Worklogs Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="worklogsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>User</th>
+                                    <th>Project</th>
+                                    <th>Issue</th>
+                                    <th>Description</th>
+                                    <th>Time Spent</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for worklog in worklogs %}
+                                <tr>
+                                    <td>{{ worklog.work_date|format_date }}</td>
+                                    <td>{{ worklog.user.display_name or worklog.user.username }}</td>
+                                    <td>{{ worklog.project.name }}</td>
+                                    <td>{{ worklog.issue.jira_key }}</td>
+                                    <td>{{ worklog.description }}</td>
+                                    <td>{{ worklog.time_spent_hours|round(2) }} h</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <button class="btn btn-sm btn-info view-worklog" 
+                                                    data-worklog-id="{{ worklog.id }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#worklogModal">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger delete-worklog" 
+                                                    data-worklog-id="{{ worklog.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Worklog Modal -->
+<div class="modal fade" id="worklogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Worklog Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Date</label>
+                    <input type="text" class="form-control" id="worklogDate" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">User</label>
+                    <input type="text" class="form-control" id="worklogUser" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Project</label>
+                    <input type="text" class="form-control" id="worklogProject" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Issue</label>
+                    <input type="text" class="form-control" id="worklogIssue" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="worklogDescription" rows="3" readonly></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Time Spent</label>
+                    <input type="text" class="form-control" id="worklogTimeSpent" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Required JavaScript libraries -->
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable with error handling
+    let worklogsTable;
+    try {
+        worklogsTable = $('#worklogsTable').DataTable({
+            pageLength: 25,
+            order: [[0, 'desc']],
+            dom: 'Bfrtip',
+            buttons: [
+                'copy', 'csv', 'excel', 'pdf'
+            ],
+            language: {
+                emptyTable: "No worklogs found",
+                zeroRecords: "No matching worklogs found",
+                loadingRecords: "Loading...",
+                processing: "Processing...",
+                error: "Error loading data"
+            },
+            processing: true,
+            rowId: 'id'
+        });
+    } catch (error) {
+        console.error('Error initializing DataTable:', error);
+        alert('Error initializing worklog table');
+    }
+
+    // Initialize DateRangePicker with error handling
+    try {
+        $('#dateRange').daterangepicker({
+            startDate: moment().subtract(30, 'days'),
+            endDate: moment(),
+            ranges: {
+               'Today': [moment(), moment()],
+               'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+               'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+               'This Month': [moment().startOf('month'), moment().endOf('month')],
+               'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            },
+            locale: {
+                format: 'YYYY-MM-DD'
+            }
+        });
+    } catch (error) {
+        console.error('Error initializing DateRangePicker:', error);
+        alert('Error initializing date picker');
+    }
+
+    // Initialize Select2 with error handling
+    try {
+        $('#userFilter, #projectFilter').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Select an option'
+        });
+    } catch (error) {
+        console.error('Error initializing Select2:', error);
+        alert('Error initializing filters');
+    }
+
+    // Helper functions with improved error handling
+    async function updateWorklogs() {
+        try {
+            const filters = {
+                dateRange: $('#dateRange').val(),
+                user: $('#userFilter').val(),
+                project: $('#projectFilter').val()
+            };
+
+            const response = await fetch('/admin/worklogs/data?' + new URLSearchParams(filters));
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.status === 'error') {
+                throw new Error(data.message || 'Error updating worklogs');
+            }
+
+            // Update table
+            worklogsTable.clear();
+            if (data.worklogs && data.worklogs.length > 0) {
+                worklogsTable.rows.add(data.worklogs.map(worklog => ({
+                    ...worklog,
+                    DT_RowId: `worklog-${worklog.id}`
+                })));
+            }
+            worklogsTable.draw();
+
+            // Update summary cards
+            if (data.summary) {
+                $('#totalHours').text(data.summary.total_hours.toFixed(2));
+                $('#totalWorklogs').text(data.summary.total_worklogs);
+                $('#activeUsers').text(data.summary.active_users);
+                $('#avgHoursPerDay').text(data.summary.avg_hours_per_day.toFixed(2));
+            }
+        } catch (error) {
+            console.error('Error updating worklogs:', error);
+            alert('Error updating worklogs: ' + error.message);
+        }
+    }
+
+    // Event handlers with improved error handling
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        updateWorklogs().catch(error => {
+            console.error('Error in filter form submission:', error);
+            alert('Error applying filters');
+        });
+    });
+
+    $('#filterForm').on('reset', function() {
+        setTimeout(() => {
+            try {
+                $('#userFilter, #projectFilter').val(null).trigger('change');
+                updateWorklogs();
+            } catch (error) {
+                console.error('Error resetting filters:', error);
+                alert('Error resetting filters');
+            }
+        }, 0);
+    });
+
+    // Handle worklog deletion
+    $('.delete-worklog').on('click', function() {
+        const worklogId = $(this).data('worklog-id');
+        if (confirm('Are you sure you want to delete this worklog?')) {
+            deleteWorklog(worklogId);
+        }
+    });
+
+    // Handle worklog view
+    $('.view-worklog').on('click', function() {
+        const worklogId = $(this).data('worklog-id');
+        loadWorklogDetails(worklogId);
+    });
+
+    // Handle JIRA sync
+    $('#syncWorklogs').on('click', function() {
+        const btn = $(this);
+        btn.prop('disabled', true);
+        btn.html('<i class="fas fa-spinner fa-spin"></i> Syncing...');
+
+        fetch('/admin/sync/worklogs', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Worklogs synchronized successfully');
+                location.reload();
+            } else {
+                alert(data.message || 'Error synchronizing worklogs');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error synchronizing worklogs');
+        })
+        .finally(() => {
+            btn.prop('disabled', false);
+            btn.html('<i class="fas fa-sync"></i> Sync Worklogs');
+        });
+    });
+
+    function deleteWorklog(worklogId) {
+        fetch(`/admin/worklogs/${worklogId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                worklogsTable.row(`[data-worklog-id="${worklogId}"]`).remove().draw();
+                alert('Worklog deleted successfully');
+            } else {
+                alert(data.message || 'Error deleting worklog');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting worklog');
+        });
+    }
+
+    function loadWorklogDetails(worklogId) {
+        fetch(`/admin/worklogs/${worklogId}`)
+            .then(response => response.json())
+            .then(worklog => {
+                $('#worklogDate').val(worklog.work_date);
+                $('#worklogUser').val(worklog.user.display_name || worklog.user.username);
+                $('#worklogProject').val(worklog.project.name);
+                $('#worklogIssue').val(worklog.issue.jira_key);
+                $('#worklogDescription').val(worklog.description);
+                $('#worklogTimeSpent').val(`${worklog.time_spent_hours.toFixed(2)} hours`);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading worklog details');
+            });
+    }
+
+    // Initial load
+    updateWorklogs().catch(error => {
+        console.error('Error in initial load:', error);
+        alert('Error loading initial data');
+    });
+});
+</script>
+{% endblock %} 

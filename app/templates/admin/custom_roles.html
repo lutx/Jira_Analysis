@@ -1,0 +1,144 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Zarządzanie Rolami - Panel Admina{% endblock %}
+
+{% block breadcrumb %}Role niestandardowe{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Zarządzanie Rolami Niestandardowymi</h1>
+                {% if session.role == 'superadmin' %}
+                <button class="btn btn-primary" onclick="showAddRoleModal()">
+                    <i class="bi bi-plus-circle"></i> Dodaj Rolę
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- Lista ról -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="customRolesTable">
+                            <thead>
+                                <tr>
+                                    <th>Nazwa</th>
+                                    <th>Opis</th>
+                                    <th>Uprawnienia</th>
+                                    <th>Utworzono przez</th>
+                                    <th>Data utworzenia</th>
+                                    <th>Status</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania/edycji roli -->
+<div class="modal fade" id="roleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="roleModalTitle">Dodaj Rolę</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="roleForm">
+                    <input type="hidden" id="roleId">
+                    <div class="mb-3">
+                        <label class="form-label">Nazwa roli</label>
+                        <input type="text" class="form-control" id="roleName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Opis</label>
+                        <textarea class="form-control" id="roleDescription"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Uprawnienia</label>
+                        <div id="permissionsContainer">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="perm_view_reports">
+                                <label class="form-check-label">Przeglądanie raportów</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="perm_manage_users">
+                                <label class="form-check-label">Zarządzanie użytkownikami</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="perm_manage_projects">
+                                <label class="form-check-label">Zarządzanie projektami</label>
+                            </div>
+                            <!-- Dodaj więcej uprawnień według potrzeb -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="saveRole()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='admin/custom_roles.js') }}"></script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.table th {
+    background-color: var(--bs-gray-100);
+    border-bottom: 2px solid var(--bs-gray-200);
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.875em;
+    padding: 0.5em 0.75em;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.permissions-badge {
+    font-size: 0.8em;
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+    display: inline-block;
+}
+
+#customRolesTable {
+    margin-bottom: 0;
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.modal-content {
+    border-radius: 0.5rem;
+}
+
+.form-check {
+    padding-left: 2rem;
+}
+</style>
+{% endblock %} 

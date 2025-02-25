@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+            <div class="position-sticky pt-3">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.dashboard' }}" 
+                           href="{{ url_for('admin.dashboard') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.projects' }}"
+                           href="{{ url_for('admin_bp.projects') }}">
+                            <i class="bi bi-kanban"></i> Projects
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.reports' }}"
+                           href="{{ url_for('admin_bp.reports') }}">
+                            <i class="bi bi-graph-up"></i> Reports
+                        </a>
+                    </li>
+                    
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>System</span>
+                    </h6>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.settings' }}"
+                           href="{{ url_for('admin_bp.settings') }}">
+                            <i class="bi bi-gear"></i> Settings
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.logs' }}"
+                           href="{{ url_for('admin_bp.logs') }}">
+                            <i class="bi bi-journal-text"></i> System Logs
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.audit' }}"
+                           href="{{ url_for('admin_bp.audit') }}">
+                            <i class="bi bi-shield-check"></i> Audit Logs
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'admin_bp.notifications' }}"
+                           href="{{ url_for('admin_bp.notifications') }}">
+                            <i class="bi bi-bell"></i> Notifications
+                            {% if unread_notifications_count > 0 %}
+                            <span class="badge bg-danger rounded-pill">{{ unread_notifications_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+}
+
+.sidebar .nav-link.active {
+    color: #2470dc;
+}
+
+.sidebar .nav-link:hover {
+    color: #2470dc;
+}
+
+.sidebar-heading {
+    font-size: .75rem;
+    text-transform: uppercase;
+}
+
+.navbar-brand {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+}
+
+.navbar .navbar-toggler {
+    top: .25rem;
+    right: 1rem;
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        position: static;
+        padding-top: 0;
+    }
+}
+</style>
+{% block admin_extra_css %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin/menu.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin/notifications.js') }}"></script>
+{% endblock %} 

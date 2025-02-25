@@ -1,0 +1,12 @@
+﻿# Ignoruj katalogi środowiska wirtualnego i cache
+venv/
+__pycache__/
+*.pyc
+
+# Ignoruj pliki systemowe
+.DS_Store
+Thumbs.db
+
+# Nie ignoruj plików konfiguracyjnych Cursora
+!.cursor/
+!.cursor/rules.yaml

@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Raport Wydajności{% endblock %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title mb-4">Raport Wydajności Systemu</h3>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Obciążenie CPU</h5>
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Wykorzystanie Pamięci</h5>
+                        <canvas id="memoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Implementacja wykresów
+</script>
+{% endblock %} 

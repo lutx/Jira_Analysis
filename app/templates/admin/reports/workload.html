@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Workload Analysis{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Workload Analysis</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="workloadFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Team</label>
+                    <select class="form-select" name="team_id">
+                        <option value="">All Teams</option>
+                        {% for team in teams %}
+                        <option value="{{ team.id }}">{{ team.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Project</label>
+                    <select class="form-select" name="project_id">
+                        <option value="">All Projects</option>
+                        {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="row">
+        <!-- Team Workload -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Team Workload Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" data-chart-type="workload" data-chart-data="{{ team_workload_data }}">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Workload -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">User Workload Distribution</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" data-chart-type="workload" data-chart-data="{{ user_workload_data }}">
+                        <canvas></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detailed Stats -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Detailed Statistics</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="workloadTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Total Hours</th>
+                            <th>Projects</th>
+                            <th>Average Daily Hours</th>
+                            <th>Utilization</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in detailed_stats %}
+                        <tr>
+                            <td>{{ stat.name }}</td>
+                            <td>{{ stat.total_hours }}</td>
+                            <td>{{ stat.projects_count }}</td>
+                            <td>{{ stat.avg_daily_hours }}</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar bg-{{ 'success' if stat.utilization < 80 else 'warning' if stat.utilization < 100 else 'danger' }}" 
+                                         role="progressbar" 
+                                         style="width: {{ stat.utilization }}%">
+                                        {{ stat.utilization }}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/workload.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,105 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_title %}Zarządzanie Portfoliami{% endblock %}
+
+{% block admin_actions %}
+<div class="btn-toolbar mb-2 mb-md-0">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPortfolioModal">
+        <i class="fas fa-plus"></i> Dodaj Portfolio
+    </button>
+</div>
+{% endblock %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nazwa</th>
+                        <th>Opis</th>
+                        <th>Projekty</th>
+                        <th>Status</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for portfolio in portfolios %}
+                    <tr>
+                        <td>{{ portfolio.name }}</td>
+                        <td>{{ portfolio.description }}</td>
+                        <td>
+                            {% for project in portfolio.projects %}
+                            <span class="badge bg-primary">{{ project.name }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if portfolio.is_active %}
+                            <span class="badge bg-success">Aktywne</span>
+                            {% else %}
+                            <span class="badge bg-danger">Nieaktywne</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="editPortfolio({{ portfolio.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="deletePortfolio({{ portfolio.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal dodawania/edycji portfolio -->
+<div class="modal fade" id="portfolioModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="portfolioModalTitle">Dodaj Portfolio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="portfolioForm">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.projects.label(class="form-label") }}
+                        {{ form.projects(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="savePortfolio()">Zapisz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/admin/portfolios.js') }}"></script>
+{% endblock %} 

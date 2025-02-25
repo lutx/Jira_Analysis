@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Raport Obciążenia - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Raport Obciążenia</h5>
+                    <div>
+                        <button class="btn btn-secondary me-2" onclick="exportReport('csv')">
+                            <i class="bi bi-file-earmark-spreadsheet"></i> Eksportuj CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="exportReport('pdf')">
+                            <i class="bi bi-file-earmark-pdf"></i> Eksportuj PDF
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtry -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="teamSelect">
+                                <option value="">Wszystkie zespoły</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="loadReport()">
+                                <i class="bi bi-search"></i> Generuj raport
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Podsumowanie -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Średnie obciążenie</h6>
+                                    <h2 id="avgWorkload">0%</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Przeciążeni użytkownicy</h6>
+                                    <h2 id="overloadedUsers">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h6 class="card-title">Optymalne obciążenie</h6>
+                                    <h2 id="optimalUsers">0</h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wykres -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <canvas id="workloadChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Szczegółowe dane -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="workloadTable">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Zespół</th>
+                                    <th>Godziny</th>
+                                    <th>Obciążenie</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dane będą dodane przez JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/static/js/reports/workload.js"></script>
+{% endblock %} 

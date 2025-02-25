@@ -1,0 +1,82 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Admin Leave Management{% endblock %}
+
+{% block admin_content %}
+<div class="container mt-4">
+  <h1>Admin Leave Management</h1>
+
+  <!-- CSV Import Form -->
+  <form method="POST" enctype="multipart/form-data" class="mb-4">
+    <div class="mb-3">
+      <label for="csv_file" class="form-label">Import Leave Data (CSV)</label>
+      <input type="file" class="form-control" id="csv_file" name="csv_file" accept=".csv">
+    </div>
+    <button type="submit" class="btn btn-primary">Import CSV</button>
+  </form>
+
+  <hr>
+
+  {% if leave_requests %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave in leave_requests %}
+        <tr>
+          <td>{{ leave.id }}</td>
+          <td>{{ leave.user.display_name if leave.user else 'N/A' }}</td>
+          <td>{{ leave.start_date }}</td>
+          <td>{{ leave.end_date }}</td>
+          <td>{{ leave.status }}</td>
+          <td>
+            <!-- Action buttons for admin -->
+            <a href="#" class="btn btn-success btn-sm" onclick="updateLeaveStatus({{ leave.id }}, 'approved')">Approve</a>
+            <a href="#" class="btn btn-danger btn-sm" onclick="updateLeaveStatus({{ leave.id }}, 'rejected')">Reject</a>
+            <a href="{{ url_for('admin.edit_leave_request', leave_id=leave.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+            <form method="POST" action="{{ url_for('admin.delete_leave_request', leave_id=leave.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this leave request?')">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No leave requests found.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+<script>
+function updateLeaveStatus(leaveId, status) {
+  fetch(`/admin/leave-management/${leaveId}/status`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": "{{ csrf_token() }}"
+    },
+    body: JSON.stringify({status: status})
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === "success") {
+      location.reload();
+    } else {
+      alert(data.message);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Error updating leave status.");
+  });
+}
+</script> 

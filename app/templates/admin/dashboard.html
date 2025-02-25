@@ -1,0 +1,217 @@
+{% extends "admin/base_admin.html" %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <h1>Dashboard</h1>
+    
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Users</h6>
+                    <h3 class="mb-0">{{ stats.users_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Active Projects</h6>
+                    <h3 class="mb-0">{{ stats.projects_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Teams</h6>
+                    <h3 class="mb-0">{{ stats.teams_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Active Tasks</h6>
+                    <h3 class="mb-0">{{ stats.tasks_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin_bp.manage_users') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-people"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('admin_bp.manage_projects') }}" class="btn btn-outline-success">
+                            <i class="bi bi-kanban"></i> Manage Projects
+                        </a>
+                        <a href="{{ url_for('admin_bp.settings') }}" class="btn btn-outline-info">
+                            <i class="bi bi-gear"></i> System Settings
+                        </a>
+                        <a href="{{ url_for('admin_bp.reports') }}" class="btn btn-outline-warning">
+                            <i class="bi bi-graph-up"></i> View Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for activity in recent_activities %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ activity.title }}</h6>
+                                <small class="text-muted">{{ activity.timestamp|timeago }}</small>
+                            </div>
+                            <p class="mb-1">{{ activity.description }}</p>
+                            <small class="text-muted">by {{ activity.user }}</small>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-3">
+                            <p class="text-muted mb-0">No recent activity</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Status -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">System Status</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>JIRA Integration</h6>
+                    <p>
+                        Status: 
+                        <span class="badge bg-{{ 'success' if stats.jira_connected else 'danger' }}">
+                            {{ 'Connected' if stats.jira_connected else 'Disconnected' }}
+                        </span>
+                    </p>
+                    {% if stats.last_sync %}
+                    <p>Last Sync: {{ stats.last_sync }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>System Health</h6>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.system_health }}%">
+                            System Health: {{ stats.system_health }}%
+                        </div>
+                    </div>
+                    <p class="mb-0">
+                        <small class="text-muted">
+                            Last checked: {{ stats.health_check_time|default('Never') }}
+                        </small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Integracja JIRA</h5>
+                    <button id="syncJiraBtn" class="btn btn-primary">
+                        <i class="fas fa-sync"></i> Synchronizuj z JIRA
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="syncStatus" class="alert d-none"></div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Ostatnia synchronizacja</th>
+                                    <th>Status</th>
+                                    <th>Szczegóły</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ jira_config.last_sync_at|default('Nigdy', true)|format_datetime }}</td>
+                                    <td>
+                                        {% if jira_config and jira_config.is_connected %}
+                                            <span class="badge bg-success">Połączono</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Brak połączenia</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin.jira_config') }}" class="btn btn-sm btn-outline-primary">
+                                            Konfiguracja
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('syncJiraBtn').addEventListener('click', function() {
+    const btn = this;
+    const statusDiv = document.getElementById('syncStatus');
+    
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronizacja w toku...';
+    statusDiv.className = 'alert d-none';
+    
+    fetch('/admin/jira/sync', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        statusDiv.className = `alert alert-${data.status === 'success' ? 'success' : 'danger'}`;
+        statusDiv.textContent = data.message;
+        
+        if (data.status === 'success') {
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        }
+    })
+    .catch(error => {
+        statusDiv.className = 'alert alert-danger';
+        statusDiv.textContent = 'Wystąpił błąd podczas synchronizacji. Spróbuj ponownie.';
+    })
+    .finally(() => {
+        // Reset button state
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-sync"></i> Synchronizuj z JIRA';
+    });
+});</script>
+{% endblock %} 

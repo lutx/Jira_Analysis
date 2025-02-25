@@ -1,0 +1,56 @@
+{% extends "reports/base_report.html" %}
+
+{% set report_title = 'Raport projektowy' %}
+
+{% block additional_filters %}
+<div class="col-md-3">
+    <label for="project" class="form-label">Projekt</label>
+    <select class="form-select" id="project" name="project">
+        <option value="">Wszystkie projekty</option>
+        {% for project in projects %}
+        <option value="{{ project.jira_key }}" {% if project.jira_key == filters.project_key %}selected{% endif %}>
+            {{ project.name }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-striped" id="reportTable">
+        <thead>
+            <tr>
+                <th>Projekt</th>
+                <th>Liczba użytkowników</th>
+                <th>Liczba zadań</th>
+                <th>Suma godzin</th>
+                <th>Średnio na użytkownika</th>
+                <th>Średnio na zadanie</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report_data %}
+            <tr>
+                <td>{{ row.project_name }} ({{ row.project_key }})</td>
+                <td>{{ row.user_count }}</td>
+                <td>{{ row.issue_count }}</td>
+                <td>{{ row.total_hours }}</td>
+                <td>{{ (row.total_hours / row.user_count)|round(2) if row.user_count > 0 else 0 }}</td>
+                <td>{{ (row.total_hours / row.issue_count)|round(2) if row.issue_count > 0 else 0 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Suma</th>
+                <th>{{ report_data|sum(attribute='user_count') }}</th>
+                <th>{{ report_data|sum(attribute='issue_count') }}</th>
+                <th>{{ report_data|sum(attribute='total_hours')|round(2) }}</th>
+                <th>-</th>
+                <th>-</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% endblock %} 

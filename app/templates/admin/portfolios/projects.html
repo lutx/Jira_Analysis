@@ -1,0 +1,96 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Zarządzaj Projektami Portfolio{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Zarządzaj projektami w portfolio: {{ portfolio.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Aktualne projekty -->
+                    <h6 class="mb-3">Projekty w portfolio</h6>
+                    {% if portfolio.projects %}
+                        <div class="table-responsive mb-4">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nazwa</th>
+                                        <th>Klucz JIRA</th>
+                                        <th>Status</th>
+                                        <th>Akcje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in portfolio.projects %}
+                                    <tr>
+                                        <td>{{ project.name }}</td>
+                                        <td>{{ project.jira_key }}</td>
+                                        <td>{{ project.status }}</td>
+                                        <td>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="project_id" value="{{ project.id }}">
+                                                <input type="hidden" name="action" value="remove">
+                                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Czy na pewno chcesz usunąć ten projekt z portfolio?')">
+                                                    Usuń z portfolio
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Brak projektów w portfolio.</p>
+                    {% endif %}
+
+                    <!-- Dostępne projekty -->
+                    <h6 class="mb-3">Dostępne projekty</h6>
+                    {% if available_projects %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nazwa</th>
+                                        <th>Klucz JIRA</th>
+                                        <th>Status</th>
+                                        <th>Akcje</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in available_projects %}
+                                    <tr>
+                                        <td>{{ project.name }}</td>
+                                        <td>{{ project.jira_key }}</td>
+                                        <td>{{ project.status }}</td>
+                                        <td>
+                                            <form method="POST" style="display: inline;">
+                                                <input type="hidden" name="project_id" value="{{ project.id }}">
+                                                <input type="hidden" name="action" value="add">
+                                                <button type="submit" class="btn btn-success btn-sm">
+                                                    Dodaj do portfolio
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Brak dostępnych projektów do dodania.</p>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('admin.manage_portfolios') }}" class="btn btn-secondary">Powrót</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

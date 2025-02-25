@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+
+{% block admin_title %}Raport Aktywności{% endblock %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title mb-4">Raport Aktywności Użytkowników</h3>
+        
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Data początkowa</label>
+                    <input type="date" class="form-control" id="startDate">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>Data końcowa</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label>&nbsp;</label>
+                    <button class="btn btn-primary form-control" onclick="generateReport()">
+                        <i class="fas fa-sync"></i> Generuj Raport
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="reportContent">
+            <!-- Tu będą wyniki raportu -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ super() }}
+<script>
+function generateReport() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    // Implementacja generowania raportu
+}
+</script>
+{% endblock %} 

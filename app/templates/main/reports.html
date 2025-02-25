@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Raporty - Jira Analysis{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/reports.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Raporty</h1>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="report-card card">
+                <div class="report-header card-header">
+                    <h5 class="card-title mb-0">Raport Projektowy</h5>
+                </div>
+                <div class="report-body card-body">
+                    <p class="card-text">Przegląd wszystkich projektów i ich statusów.</p>
+                    <a href="{{ url_for('main.report_details', report_type='project') }}" 
+                       class="btn btn-primary">Zobacz raport</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="report-card card">
+                <div class="report-header card-header">
+                    <h5 class="card-title mb-0">Raport Użytkowników</h5>
+                </div>
+                <div class="report-body card-body">
+                    <p class="card-text">Analiza aktywności użytkowników.</p>
+                    <a href="{{ url_for('main.report_details', report_type='user') }}" 
+                       class="btn btn-primary">Zobacz raport</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="report-card card">
+                <div class="report-header card-header">
+                    <h5 class="card-title mb-0">Raport Czasowy</h5>
+                </div>
+                <div class="report-body card-body">
+                    <p class="card-text">Analiza czasu spędzonego na zadaniach.</p>
+                    <a href="{{ url_for('main.report_details', report_type='time') }}" 
+                       class="btn btn-primary">Zobacz raport</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %} 

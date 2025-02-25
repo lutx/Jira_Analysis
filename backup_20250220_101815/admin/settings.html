@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+
+{% block breadcrumb %}Ustawienia{% endblock %}
+
+{% block admin_content %}
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            {{ form.csrf_token }}
+            
+            <div class="mb-3">
+                {{ form.sync_interval.label }}
+                {{ form.sync_interval(class="form-control") }}
+                {% if form.sync_interval.errors %}
+                    <div class="invalid-feedback">{{ form.sync_interval.errors[0] }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.log_level.label }}
+                {{ form.log_level(class="form-control") }}
+                {% if form.log_level.errors %}
+                    <div class="invalid-feedback">{{ form.log_level.errors[0] }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.cache_timeout.label }}
+                {{ form.cache_timeout(class="form-control") }}
+                {% if form.cache_timeout.errors %}
+                    <div class="invalid-feedback">{{ form.cache_timeout.errors[0] }}</div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Zapisz ustawienia</button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

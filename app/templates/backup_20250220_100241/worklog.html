@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Worklogi - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Worklogi użytkownika</h1>
+        <div>
+            <span class="text-muted">
+                Okres: {{ start_date.strftime('%Y-%m-%d') }} - {{ end_date.strftime('%Y-%m-%d') }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Filtry -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="filterForm" class="row g-3">
+                <div class="col-md-3">
+                    <label for="projectFilter" class="form-label">Projekt</label>
+                    <input type="text" class="form-control" id="projectFilter" placeholder="Filtruj po projekcie...">
+                </div>
+                {% if is_admin %}
+                <div class="col-md-3">
+                    <label for="userFilter" class="form-label">Użytkownik</label>
+                    <input type="text" class="form-control" id="userFilter" placeholder="Filtruj po użytkowniku...">
+                </div>
+                {% endif %}
+                <div class="col-md-3">
+                    <label for="dateStart" class="form-label">Data od</label>
+                    <input type="date" class="form-control" id="dateStart" value="{{ start_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="dateEnd" class="form-label">Data do</label>
+                    <input type="date" class="form-control" id="dateEnd" value="{{ end_date.strftime('%Y-%m-%d') }}">
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtruj
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetFilters()">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Wyniki -->
+    <div id="worklogResults">
+        {% if grouped_worklogs %}
+            {% for project_key, users in grouped_worklogs.items() %}
+            <div class="card mb-4 project-card" data-project="{{ project_key }}">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Projekt: {{ project_key }}</h5>
+                </div>
+                <div class="card-body">
+                    {% for username, logs in users.items() %}
+                    <div class="mb-4 user-section" data-user="{{ username }}">
+                        <h6 class="border-bottom pb-2">Użytkownik: {{ username }}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Zadanie</th>
+                                        <th>Czas (h)</th>
+                                        <th>Data rozpoczęcia</th>
+                                        <th>Komentarz</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>
+                                            <a href="{{ jira_url }}/browse/{{ log.issue }}" target="_blank">
+                                                {{ log.issue }}
+                                            </a>
+                                        </td>
+                                        <td>{{ "%.2f"|format(log.time_spent) }}</td>
+                                        <td>{{ log.started|datetime }}</td>
+                                        <td>{{ log.comment }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                    <tr class="table-info">
+                                        <td colspan="1"><strong>Suma</strong></td>
+                                        <td colspan="3">
+                                            <strong>{{ "%.2f"|format(logs|sum(attribute='time_spent')) }} h</strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                Brak wpisów worklog w wybranym okresie.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filterForm');
+    const projectFilter = document.getElementById('projectFilter');
+    const userFilter = document.getElementById('userFilter');
+    const dateStart = document.getElementById('dateStart');
+    const dateEnd = document.getElementById('dateEnd');
+
+    function filterWorklogs() {
+        const projectValue = projectFilter.value.toLowerCase();
+        const userValue = userFilter ? userFilter.value.toLowerCase() : '';
+        
+        // Filtruj projekty
+        document.querySelectorAll('.project-card').forEach(projectCard => {
+            const projectKey = projectCard.dataset.project.toLowerCase();
+            let projectVisible = projectKey.includes(projectValue);
+            
+            // Filtruj użytkowników w projekcie
+            const userSections = projectCard.querySelectorAll('.user-section');
+            let hasVisibleUsers = false;
+            
+            userSections.forEach(userSection => {
+                const userName = userSection.dataset.user.toLowerCase();
+                const userVisible = !userFilter || userName.includes(userValue);
+                userSection.style.display = userVisible ? '' : 'none';
+                if (userVisible) hasVisibleUsers = true;
+            });
+            
+            projectCard.style.display = (projectVisible && hasVisibleUsers) ? '' : 'none';
+        });
+    }
+
+    async function refreshWorklogs() {
+        try {
+            const response = await fetch(`/api/worklogs?start_date=${dateStart.value}&end_date=${dateEnd.value}`);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            
+            // Odśwież widok z nowymi danymi
+            document.getElementById('worklogResults').innerHTML = data.html;
+            filterWorklogs(); // Zastosuj aktywne filtry
+        } catch (error) {
+            console.error('Error:', error);
+            toastr.error('Wystąpił błąd podczas odświeżania danych');
+        }
+    }
+
+    function resetFilters() {
+        filterForm.reset();
+        filterWorklogs();
+    }
+
+    // Event listeners
+    filterForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        refreshWorklogs();
+    });
+
+    projectFilter.addEventListener('input', filterWorklogs);
+    if (userFilter) userFilter.addEventListener('input', filterWorklogs);
+});
+</script>
+{% endblock %} 

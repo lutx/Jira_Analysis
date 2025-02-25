@@ -1,0 +1,160 @@
+{% extends "admin/base.html" %}
+
+{% block title %}System Logs{% endblock %}
+
+{% block admin_content %}
+<div class="container mt-4">
+    <h1>System Logs</h1>
+    
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="logFilters" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Log Level</label>
+                    <select class="form-select" name="level">
+                        <option value="">All Levels</option>
+                        <option value="DEBUG">Debug</option>
+                        <option value="INFO">Info</option>
+                        <option value="WARNING">Warning</option>
+                        <option value="ERROR">Error</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <input type="text" class="form-control daterange" name="date_range">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Module</label>
+                    <select class="form-select" name="module">
+                        <option value="">All Modules</option>
+                        {% for module in modules %}
+                        <option value="{{ module }}">{{ module }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Log Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Total Logs</h6>
+                    <h3 class="mb-0">{{ total_logs }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Warnings</h6>
+                    <h3 class="mb-0">{{ warning_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Errors</h6>
+                    <h3 class="mb-0">{{ error_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title">Success Rate</h6>
+                    <h3 class="mb-0">{{ success_rate }}%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Log Viewer -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Log Entries</h5>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()">
+                    <i class="bi bi-trash"></i> Clear Logs
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="downloadLogs()">
+                    <i class="bi bi-download"></i> Download Logs
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped" id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Level</th>
+                            <th>Module</th>
+                            <th>Message</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.timestamp }}</td>
+                            <td>
+                                <span class="badge bg-{{ log.level_class }}">
+                                    {{ log.level }}
+                                </span>
+                            </td>
+                            <td>{{ log.module }}</td>
+                            <td>{{ log.message }}</td>
+                            <td>
+                                {% if log.details %}
+                                <button class="btn btn-sm btn-info" onclick="viewLogDetails({{ log.id }})">
+                                    <i class="bi bi-info-circle"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="logDetailsContent">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block admin_extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin/logs.js') }}"></script>
+{% endblock %} 

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Heatmapa Aktywności - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Heatmapa Aktywności</h5>
+                    <div>
+                        <select class="form-select" id="userSelect">
+                            <option value="">Wszyscy użytkownicy</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtry -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100" onclick="loadHeatmap()">
+                                <i class="bi bi-search"></i> Generuj heatmapę
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Heatmapa -->
+                    <div id="heatmap" class="mb-4">
+                        <!-- D3.js wygeneruje tutaj heatmapę -->
+                    </div>
+
+                    <!-- Legenda -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-center align-items-center">
+                                <span class="me-2">Mniej</span>
+                                <div id="legend" class="d-flex">
+                                    <!-- D3.js wygeneruje tutaj legendę -->
+                                </div>
+                                <span class="ms-2">Więcej</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="/static/js/reports/heatmap.js"></script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.heatmap-cell {
+    fill: #eee;
+    stroke: #fff;
+    stroke-width: 1px;
+}
+
+.heatmap-cell:hover {
+    stroke: #000;
+    stroke-width: 2px;
+}
+
+.legend-cell {
+    width: 30px;
+    height: 20px;
+    margin: 0 2px;
+}
+
+.tooltip {
+    position: absolute;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+}
+</style>
+{% endblock %} 

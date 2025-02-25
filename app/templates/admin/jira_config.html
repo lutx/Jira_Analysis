@@ -1,0 +1,270 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}JIRA Configuration{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script>
+// Immediately log to verify script execution
+console.log('Debug: Head script loaded');
+
+// Define sync functions in global scope
+window.jiraSync = {
+    updateStatus: function(message, isLoading = false) {
+        console.log('Debug: Updating status:', message, isLoading);
+        const statusDiv = document.getElementById('sync-status');
+        const spinner = document.getElementById('sync-spinner');
+        const messageSpan = document.getElementById('sync-message');
+        
+        if (!statusDiv || !spinner || !messageSpan) {
+            console.error('Debug: Status elements not found');
+            return;
+        }
+        
+        statusDiv.classList.remove('d-none');
+        statusDiv.classList.remove('alert-info', 'alert-success', 'alert-danger');
+        statusDiv.classList.add(isLoading ? 'alert-info' : 'alert-success');
+        
+        spinner.classList.toggle('d-none', !isLoading);
+        messageSpan.textContent = message;
+    },
+    
+    performSync: async function(button) {
+        console.log('Debug: Starting sync for button:', button.id);
+        const endpoint = button.dataset.endpoint;
+        const originalText = button.innerHTML;
+        
+        try {
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Syncing...';
+            this.updateStatus('Synchronization in progress...', true);
+            
+            console.log('Debug: Making request to', endpoint);
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
+                credentials: 'same-origin'
+            });
+            
+            const data = await response.json();
+            console.log('Debug: Response received:', data);
+            
+            if (data.status === 'success') {
+                this.updateStatus('Synchronization completed successfully!');
+                setTimeout(() => window.location.reload(), 2000);
+            } else {
+                throw new Error(data.message || 'Synchronization failed');
+            }
+        } catch (error) {
+            console.error('Debug: Error during sync:', error);
+            this.updateStatus('Error: ' + error.message);
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    },
+    
+    testConnection: async function(button) {
+        console.log('Debug: Testing connection');
+        const url = document.getElementById('url').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        if (!url || !username) {
+            alert('Please fill in the URL and username fields');
+            return;
+        }
+
+        const originalText = button.innerHTML;
+        try {
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Testing...';
+            
+            const response = await fetch('/admin/jira/test-connection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ url, username, password })
+            });
+
+            const data = await response.json();
+            alert(data.message || 'Connection test completed');
+        } catch (error) {
+            console.error('Debug: Error testing connection:', error);
+            alert('Error testing connection');
+        } finally {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+};
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Debug: DOM loaded, setting up handlers');
+    
+    // Add handlers for sync buttons
+    document.querySelectorAll('[data-endpoint]').forEach(button => {
+        console.log('Debug: Adding handler for', button.id);
+        button.onclick = (e) => {
+            e.preventDefault();
+            window.jiraSync.performSync(button);
+        };
+    });
+    
+    // Add handler for test connection
+    const testButton = document.getElementById('test-connection');
+    if (testButton) {
+        console.log('Debug: Adding test connection handler');
+        testButton.onclick = (e) => {
+            e.preventDefault();
+            window.jiraSync.testConnection(testButton);
+        };
+    }
+    
+    console.log('Debug: All handlers set up');
+});
+</script>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container py-4">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">JIRA Configuration</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <h5>Connection Status: 
+                    {% if is_connected %}
+                        <span class="badge bg-success">Connected</span>
+                    {% else %}
+                        <span class="badge bg-danger">Not Connected</span>
+                    {% endif %}
+                </h5>
+            </div>
+
+            <form method="POST" action="{{ url_for('admin.jira_config') }}" id="jiraConfigForm">
+                {{ form.csrf_token }}
+                
+                <div class="mb-3">
+                    {{ form.url.label(class="form-label") }}
+                    {{ form.url(class="form-control", autocomplete="url") }}
+                    {% if form.url.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.url.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control", autocomplete="username") }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.username.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control", autocomplete="current-password") }}
+                    {% if form.password.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.password.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="form-text text-muted">Leave empty to keep the existing password</small>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.is_active(class="form-check-input") }}
+                        {{ form.is_active.label(class="form-check-label") }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    {% if config %}
+                        <button type="submit" name="reset" value="1" class="btn btn-danger" 
+                                onclick="return confirm('Are you sure you want to reset the JIRA configuration? This will delete all current settings.')">
+                            Reset Configuration
+                        </button>
+                    {% endif %}
+                    <button type="button" class="btn btn-secondary" id="test-connection">Test Connection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sync Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Data Synchronization</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <button type="button" id="sync-all" class="btn btn-primary me-2" data-endpoint="/admin/jira/sync">
+                        <i class="fas fa-sync"></i> Sync All Data
+                    </button>
+                    <button type="button" id="sync-users" class="btn btn-secondary me-2" data-endpoint="/admin/jira/sync-users">
+                        <i class="fas fa-users"></i> Sync Users
+                    </button>
+                    <button type="button" id="sync-projects" class="btn btn-secondary me-2" data-endpoint="/admin/sync/projects">
+                        <i class="fas fa-project-diagram"></i> Sync Projects
+                    </button>
+                    <button type="button" id="sync-worklogs" class="btn btn-secondary" data-endpoint="/admin/sync/worklogs">
+                        <i class="fas fa-clock"></i> Sync Worklogs
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h6>Last Synchronization Status</h6>
+                <div id="sync-status" class="alert d-none">
+                    <div class="d-flex align-items-center">
+                        <div id="sync-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <span id="sync-message"></span>
+                    </div>
+                    <div id="sync-progress" class="progress mt-2 d-none">
+                        <div id="sync-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                    </div>
+                    <div id="sync-details" class="mt-2 small text-muted d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{% endblock %} 
