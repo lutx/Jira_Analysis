@@ -43,6 +43,10 @@ from app.commands.check_admin import check_admin_command
 from app.routes.api import api_bp
 from logging.handlers import RotatingFileHandler
 from app.routes.admin import admin_bp
+from app.routes.team_capacity import team_capacity_bp
+from app.routes.users import users_bp
+from app.routes.leaves import leaves_bp
+from app.routes.views import views_bp
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -80,17 +84,29 @@ def create_app(config_object: str = "app.config.Config") -> Flask:
     # Initialize all other extensions
     init_extensions(app)
     
+    # Register CLI commands
+    from app.cli import register_commands
+    register_commands(app)
+    
     # Register blueprints
     from app.routes.main import main_bp
     from app.routes.auth import auth_bp
     from app.routes.admin import admin_bp
     from app.routes.api import api_bp
+    from app.routes.team_capacity import team_capacity_bp
+    from app.routes.users import users_bp
+    from app.routes.leaves import leaves_bp
+    from app.routes.views import views_bp
     
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(team_capacity_bp)
     app.register_blueprint(filters_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(leaves_bp)
+    app.register_blueprint(views_bp)
     
     # Register error handlers
     register_error_handlers(app)
@@ -127,22 +143,21 @@ def create_app(config_object: str = "app.config.Config") -> Flask:
     
     @app.before_request
     def before_request():
-        # Reduce logging verbosity for static files
+        # Reduce logging verbosity for static files and avoid logging sensitive data
         if not request.path.startswith('/static/'):
-            logger.info(f"Processing request to {request.url}")
-            logger.info(f"Request method: {request.method}")
-            logger.info(f"Request headers: {dict(request.headers)}")
+            logger.info(f"Request: {request.method} {request.path}")
             
-            # Bezpieczne logowanie danych sesji
-            try:
-                if hasattr(session, '_get_current_object'):
-                    session_obj = session._get_current_object()
-                    session_data = dict(session_obj) if session_obj else {}
-                    logger.info(f"Session data: {session_data}")
-            except Exception as e:
-                logger.error(f"Error accessing session data: {str(e)}")
-                
-            logger.info(f"Cookie data: {request.cookies}")
+            # Log only non-sensitive headers - improved security
+            safe_headers = {k: v for k, v in request.headers.items() 
+                          if k.lower() not in ('authorization', 'cookie', 'x-csrf-token', 
+                                              'session', 'set-cookie', 'proxy-authorization')}
+            # Reduce verbosity by only logging in debug mode
+            if app.debug:
+                logger.debug(f"Request headers (safe): {safe_headers}")
+            
+            # Don't log session data at all - it contains sensitive information
+            if 'session' in request.__dict__:
+                logger.debug(f"Session exists: {True}")
 
     @app.after_request
     def after_request(response):
@@ -158,25 +173,34 @@ def create_app(config_object: str = "app.config.Config") -> Flask:
         if not request.path.startswith('/static/'):
             response.headers.set('X-CSRF-Token', generate_csrf())
         
-        # Upewnij się, że ciasteczka sesji są poprawnie ustawione
+        # Set session cookies with secure flags
         try:
             if hasattr(session, 'sid'):
+                # True in production, False only in development
+                secure = not app.debug
                 response.set_cookie(
                     'session',
                     session.sid,
                     httponly=True,
-                    secure=False,  # Zmień na True w produkcji
+                    secure=secure,
                     samesite='Lax',
                     domain=None,
-                    path='/'
+                    path='/',
+                    max_age=app.config.get('PERMANENT_SESSION_LIFETIME', 86400)  # Default: 1 day
                 )
         except Exception as e:
             logger.error(f"Error setting session cookie: {str(e)}")
         
-        # Reduce logging verbosity for static files
+        # Reduce logging verbosity for static files and sensitive information
         if not request.path.startswith('/static/'):
-            logger.info(f"Response status: {response.status_code}")
-            logger.info(f"Response headers: {dict(response.headers)}")
+            logger.info(f"Response: {request.method} {request.path} - {response.status_code}")
+            
+            # Only log non-sensitive headers and only in debug mode
+            if app.debug:
+                safe_headers = {k: v for k, v in response.headers.items() 
+                              if k.lower() not in ('set-cookie', 'authorization', 'cookie')}
+                logger.debug(f"Response headers (safe): {safe_headers}")
+        
         return response
     
     # Configure login manager
@@ -195,6 +219,84 @@ def create_app(config_object: str = "app.config.Config") -> Flask:
     
     # Attach the login_manager to app so it can be accessed via current_app
     app.login_manager = login_manager
+    
+    @app.after_request
+    def add_security_headers(response):
+        # Define CSP directives - more restrictive where possible
+        csp = {
+            'default-src': ["'self'"],
+            'script-src': [
+                "'self'",
+                "'unsafe-inline'",  # Still needed for inline event handlers
+                # Removed unsafe-eval as a security improvement
+                "https://code.jquery.com",
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com", 
+                "https://cdn.datatables.net"
+            ],
+            'style-src': [
+                "'self'",
+                "'unsafe-inline'",
+                "https://cdn.jsdelivr.net",
+                "https://cdnjs.cloudflare.com",
+                "https://cdn.datatables.net"
+            ],
+            'font-src': [
+                "'self'",
+                "https://cdnjs.cloudflare.com",
+                "https://cdn.jsdelivr.net",
+                "data:"
+            ],
+            'img-src': ["'self'", "data:", "https:"],
+            'connect-src': ["'self'"]
+        }
+        
+        # Add allowed API endpoints specifically instead of allowing all domains
+        if app.config.get('JIRA_URL'):
+            csp['connect-src'].append(app.config.get('JIRA_URL'))
+        
+        # Add development server if needed
+        if app.debug:
+            csp['connect-src'].append("http://localhost:5003")
+            # In debug mode, we allow unsafe-eval for better developer experience
+            csp['script-src'].append("'unsafe-eval'")
+
+        # More robust check for HTML responses to avoid affecting API responses
+        content_type = response.headers.get('Content-Type', '')
+        is_html = 'text/html' in content_type or 'application/xhtml+xml' in content_type
+        
+        if is_html:
+            # Convert CSP dict to string
+            csp_string = '; '.join([
+                f"{key} {' '.join(values)}"
+                for key, values in csp.items()
+            ])
+            
+            # Set CSP header
+            response.headers['Content-Security-Policy'] = csp_string
+            
+            # Log at debug level only to reduce log verbosity
+            app.logger.debug(f"Setting CSP header for HTML response: {request.path}")
+        
+        # Set other security headers for all responses
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        # Add cache control for static resources
+        if request.path.startswith('/static/'):
+            # Add versioned cache control with strong ETag for static resources
+            response.headers['Cache-Control'] = 'public, max-age=604800, immutable'
+            response.headers['Vary'] = 'Accept-Encoding'
+        elif not is_html and not request.path.startswith('/api/'):
+            # Default cache for non-HTML, non-API responses
+            response.headers['Cache-Control'] = 'public, max-age=3600'
+        else:
+            # Prevent caching for HTML and API responses
+            response.headers['Cache-Control'] = 'no-store, max-age=0'
+        
+        return response
     
     return app
 

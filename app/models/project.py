@@ -37,7 +37,7 @@ class Project(db.Model):
     )
 
     # Team relationship
-    assigned_teams = db.relationship(
+    teams = db.relationship(
         'Team',
         secondary='team_projects',
         back_populates='assigned_projects',
@@ -110,7 +110,7 @@ class Project(db.Model):
         """Get project with preloaded relationships and statistics."""
         return cls.query\
             .options(
-                joinedload(cls.assigned_teams),
+                joinedload(cls.teams),
                 joinedload(cls.assignments)
             )\
             .filter(cls.id == project_id)\

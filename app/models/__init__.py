@@ -21,6 +21,10 @@ from .leave import Leave
 from .team_membership import TeamMembership
 from .user_availability import UserAvailability
 from .leave_request import LeaveRequest
+from .holiday import Holiday
+from .leave_balance import LeaveBalance
+from .team_capacity import TeamCapacity, TeamAllocation
+from .report import Report, ReportResult
 
 # Export only what's necessary
 __all__ = [
@@ -32,5 +36,11 @@ __all__ = [
     'Team',
     'Worklog',
     'ProjectAssignment',
-    'TeamMembership'
+    'TeamMembership',
+    'Holiday',
+    'LeaveBalance',
+    'TeamCapacity',
+    'TeamAllocation',
+    'Report',
+    'ReportResult'
 ] 

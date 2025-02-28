@@ -20,6 +20,7 @@ from app.exceptions import (
     AppError, ValidationError, ExportError, DatabaseError,
     ResourceNotFoundError, BusinessLogicError, ReportError
 )
+from app.models import Report, ReportResult, Leave, Portfolio
 
 logger = logging.getLogger(__name__)
 
@@ -612,4 +613,263 @@ def get_workload_report(start_date=None, end_date=None, format='json'):
     except ValidationError:
         raise
     except Exception as e:
-        raise ReportError(f"Failed to generate workload report: {str(e)}") 
+        raise ReportError(f"Failed to generate workload report: {str(e)}")
+
+def generate_report(report: Report) -> Optional[ReportResult]:
+    """Generate report based on type and parameters."""
+    try:
+        result = ReportResult(
+            report_id=report.id,
+            status='running'
+        )
+        db.session.add(result)
+        db.session.commit()
+
+        params = report.get_parameters()
+        report_data = None
+
+        if report.report_type == 'leave_usage':
+            report_data = generate_leave_usage_report(params)
+        elif report.report_type == 'team_availability':
+            report_data = generate_team_availability_report(params)
+        elif report.report_type == 'cost_tracking':
+            report_data = generate_cost_tracking_report(params)
+        elif report.report_type == 'project_allocation':
+            report_data = generate_project_allocation_report(params)
+        else:
+            result.set_error(f"Unknown report type: {report.report_type}")
+            db.session.commit()
+            return result
+
+        result.set_result(report_data)
+        db.session.commit()
+        return result
+
+    except Exception as e:
+        logger.error(f"Error generating report: {str(e)}")
+        if result:
+            result.set_error(str(e))
+            db.session.commit()
+        return None
+
+def generate_leave_usage_report(params: Dict) -> Dict:
+    """Generate leave usage report."""
+    try:
+        start_date = datetime.strptime(params.get('start_date', ''), '%Y-%m-%d') if params.get('start_date') else None
+        end_date = datetime.strptime(params.get('end_date', ''), '%Y-%m-%d') if params.get('end_date') else None
+        team_id = params.get('team_id')
+
+        query = db.session.query(
+            Leave.user_id,
+            Leave.leave_type,
+            func.sum(Leave.duration).label('total_days')
+        ).filter(Leave.status == 'approved')
+
+        if start_date:
+            query = query.filter(Leave.start_date >= start_date)
+        if end_date:
+            query = query.filter(Leave.end_date <= end_date)
+        if team_id:
+            query = query.join(User).filter(User.team_id == team_id)
+
+        results = query.group_by(Leave.user_id, Leave.leave_type).all()
+
+        # Process results
+        leave_usage = {}
+        for user_id, leave_type, total_days in results:
+            user = User.query.get(user_id)
+            if user:
+                if user.username not in leave_usage:
+                    leave_usage[user.username] = {}
+                leave_usage[user.username][leave_type] = float(total_days)
+
+        return {
+            'leave_usage': leave_usage,
+            'period': {
+                'start_date': start_date.isoformat() if start_date else None,
+                'end_date': end_date.isoformat() if end_date else None
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating leave usage report: {str(e)}")
+        raise
+
+def generate_team_availability_report(params: Dict) -> Dict:
+    """Generate team availability report."""
+    try:
+        start_date = datetime.strptime(params.get('start_date', ''), '%Y-%m-%d') if params.get('start_date') else None
+        end_date = datetime.strptime(params.get('end_date', ''), '%Y-%m-%d') if params.get('end_date') else None
+        team_id = params.get('team_id')
+
+        # Get all approved leaves in the period
+        leaves_query = Leave.query.filter(Leave.status == 'approved')
+        if start_date:
+            leaves_query = leaves_query.filter(Leave.end_date >= start_date)
+        if end_date:
+            leaves_query = leaves_query.filter(Leave.start_date <= end_date)
+
+        # Get team members
+        team_members = User.query.filter_by(team_id=team_id).all() if team_id else User.query.all()
+
+        availability = {}
+        for user in team_members:
+            user_leaves = leaves_query.filter(Leave.user_id == user.id).all()
+            
+            # Calculate availability
+            total_days = (end_date - start_date).days + 1 if start_date and end_date else 0
+            leave_days = sum(leave.duration for leave in user_leaves)
+            
+            availability[user.username] = {
+                'total_days': total_days,
+                'leave_days': leave_days,
+                'available_days': total_days - leave_days,
+                'availability_percentage': ((total_days - leave_days) / total_days * 100) if total_days > 0 else 100
+            }
+
+        return {
+            'team_availability': availability,
+            'period': {
+                'start_date': start_date.isoformat() if start_date else None,
+                'end_date': end_date.isoformat() if end_date else None
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating team availability report: {str(e)}")
+        raise
+
+def generate_cost_tracking_report(params: Dict) -> Dict:
+    """Generate cost tracking report based on role hourly rates."""
+    try:
+        start_date = datetime.strptime(params.get('start_date', ''), '%Y-%m-%d') if params.get('start_date') else None
+        end_date = datetime.strptime(params.get('end_date', ''), '%Y-%m-%d') if params.get('end_date') else None
+        project_id = params.get('project_id')
+
+        from app.models.worklog import Worklog
+        from app.models.user_role import UserRole
+
+        # Get worklogs with role information
+        query = db.session.query(
+            Worklog.project_id,
+            Role.name.label('role_name'),
+            Role.hourly_rate,
+            func.sum(Worklog.hours_spent).label('total_hours')
+        ).join(
+            UserRole, UserRole.user_id == Worklog.user_id
+        ).join(
+            Role, Role.id == UserRole.role_id
+        )
+
+        if start_date:
+            query = query.filter(Worklog.date >= start_date)
+        if end_date:
+            query = query.filter(Worklog.date <= end_date)
+        if project_id:
+            query = query.filter(Worklog.project_id == project_id)
+
+        results = query.group_by(
+            Worklog.project_id,
+            Role.name,
+            Role.hourly_rate
+        ).all()
+
+        # Process results
+        cost_tracking = {}
+        for project_id, role_name, hourly_rate, total_hours in results:
+            project = Project.query.get(project_id)
+            if project:
+                if project.name not in cost_tracking:
+                    cost_tracking[project.name] = {
+                        'total_cost': 0,
+                        'roles': {}
+                    }
+                
+                role_cost = float(hourly_rate) * float(total_hours)
+                cost_tracking[project.name]['roles'][role_name] = {
+                    'hours': float(total_hours),
+                    'rate': float(hourly_rate),
+                    'cost': role_cost
+                }
+                cost_tracking[project.name]['total_cost'] += role_cost
+
+        return {
+            'cost_tracking': cost_tracking,
+            'period': {
+                'start_date': start_date.isoformat() if start_date else None,
+                'end_date': end_date.isoformat() if end_date else None
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating cost tracking report: {str(e)}")
+        raise
+
+def generate_project_allocation_report(params: Dict) -> Dict:
+    """Generate project allocation report."""
+    try:
+        start_date = datetime.strptime(params.get('start_date', ''), '%Y-%m-%d') if params.get('start_date') else None
+        end_date = datetime.strptime(params.get('end_date', ''), '%Y-%m-%d') if params.get('end_date') else None
+        portfolio_id = params.get('portfolio_id')
+
+        from app.models.worklog import Worklog
+        from app.models.project_assignment import ProjectAssignment
+
+        # Get project assignments and actual work
+        query = db.session.query(
+            Project.id,
+            Project.name,
+            func.sum(ProjectAssignment.planned_hours).label('planned_hours'),
+            func.sum(Worklog.hours_spent).label('actual_hours')
+        ).outerjoin(
+            ProjectAssignment, Project.id == ProjectAssignment.project_id
+        ).outerjoin(
+            Worklog, Project.id == Worklog.project_id
+        )
+
+        if portfolio_id:
+            portfolio = Portfolio.query.get(portfolio_id)
+            if portfolio:
+                query = query.filter(Project.id.in_([p.id for p in portfolio.projects]))
+
+        if start_date:
+            query = query.filter(
+                db.or_(
+                    ProjectAssignment.start_date >= start_date,
+                    Worklog.date >= start_date
+                )
+            )
+        if end_date:
+            query = query.filter(
+                db.or_(
+                    ProjectAssignment.end_date <= end_date,
+                    Worklog.date <= end_date
+                )
+            )
+
+        results = query.group_by(Project.id, Project.name).all()
+
+        # Process results
+        project_allocation = {}
+        for project_id, project_name, planned_hours, actual_hours in results:
+            planned = float(planned_hours) if planned_hours else 0
+            actual = float(actual_hours) if actual_hours else 0
+            
+            project_allocation[project_name] = {
+                'planned_hours': planned,
+                'actual_hours': actual,
+                'utilization': (actual / planned * 100) if planned > 0 else 0,
+                'difference': actual - planned
+            }
+
+        return {
+            'project_allocation': project_allocation,
+            'period': {
+                'start_date': start_date.isoformat() if start_date else None,
+                'end_date': end_date.isoformat() if end_date else None
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating project allocation report: {str(e)}")
+        raise 

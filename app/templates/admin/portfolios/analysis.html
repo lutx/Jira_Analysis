@@ -4,72 +4,113 @@
 
 {% block head %}
 {{ super() }}
-<!-- No Chart.js CSS needed - it's a JavaScript-only library -->
+<!-- Style zdefiniowano w głównym pliku admin.css -->
 {% endblock %}
 
 {% block admin_content %}
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>Portfolio Analysis</h1>
-                <div class="form-group" style="width: 300px;">
-                    <select id="portfolioSelect" class="form-select" onchange="updateAnalysis()">
-                        <option value="">-- Select Portfolio --</option>
-                        {% for portfolio in portfolios %}
-                        <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
-                        {% endfor %}
-                    </select>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Portfolio Analysis</h3>
                 </div>
-            </div>
+                <div class="card-body">
+            <!-- Debug Section with enhanced information -->
+            <div class="debug-section">
+                <h5>Debug Console</h5>
+                <div id="debug-log" class="debug-log"></div>
+                <!-- Environment info section -->
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between">
+                        <strong>Current Page URL:</strong>
+                        <span id="page-url"></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <strong>API URL:</strong>
+                        <span id="api-url-display"></span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <strong>CSRF Token:</strong>
+                        <span id="csrf-token-status"></span>
+                    </div>
+                </div>
+                    </div>
 
-            <div class="row">
-                <!-- Summary Cards -->
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Total Hours</h5>
-                            <h3 class="mb-0">{{ analysis_data.total_hours }}</h3>
+                    <!-- Filters -->
+            <div class="filters-container">
+                <form id="analysis-form">
+                    <div class="form-row">
+                        <div class="col-form">
+                            <div class="form-group">
+                                <label for="portfolio-select">Portfolio</label>
+                                <select class="form-control" id="portfolio-select" required>
+                                <option value="">Select Portfolio</option>
+                                {% for portfolio in portfolios %}
+                                <option value="{{ portfolio.id }}">{{ portfolio.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        </div>
+                        <div class="col-form">
+                            <div class="form-group">
+                                <label for="start-date">Start Date</label>
+                                <input type="date" class="form-control" id="start-date" required>
+                            </div>
+                        </div>
+                        <div class="col-form">
+                            <div class="form-group">
+                                <label for="end-date">End Date</label>
+                                <input type="date" class="form-control" id="end-date" required>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Planned Hours</h5>
-                            <h3 class="mb-0">{{ analysis_data.planned_hours }}</h3>
+                    <div class="form-row">
+                        <div class="col-form">
+                            <button type="submit" class="btn btn-primary" id="load-analysis-btn">
+                                <i class="fas fa-sync"></i> Load Analysis
+                            </button>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Actual Hours</h5>
-                            <h3 class="mb-0">{{ analysis_data.actual_hours }}</h3>
-                        </div>
+                </form>
                     </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-white mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">Discrepancy</h5>
-                            <h3 class="mb-0">{{ analysis_data.discrepancy }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="row">
-                <!-- Chart -->
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Hours Analysis</h5>
+            <!-- Results -->
+            <div id="results-section" class="results-section" style="display: none; position: relative;">
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-card-inner stat-card-primary">
+                            <div class="stat-value" id="total-hours">0</div>
+                            <div class="stat-label">Total Hours</div>
+                                    </div>
+                                </div>
+                    <div class="stat-card">
+                        <div class="stat-card-inner stat-card-success">
+                            <div class="stat-value" id="total-users">0</div>
+                            <div class="stat-label">Total Users</div>
+                                    </div>
+                                </div>
+                    <div class="stat-card">
+                        <div class="stat-card-inner stat-card-info">
+                            <div class="stat-value" id="projects-count">0</div>
+                            <div class="stat-label">Projects Count</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <canvas id="analysisChart" width="400" height="200"></canvas>
+
+                        <div class="table-responsive">
+                    <table class="table table-striped" id="projects-table">
+                                <thead>
+                                    <tr>
+                                <th>Project</th>
+                                <th>Hours</th>
+                                <th>Users</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
-                    </div>
+                
+                <div id="loading-overlay" class="loading-overlay" style="display: none;">
+                    <div class="spinner"></div>
                 </div>
             </div>
         </div>
@@ -79,66 +120,863 @@
 
 {% block scripts %}
 {{ super() }}
-<!-- Use the latest version of Chart.js from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('analysisChart').getContext('2d');
-    const analysisChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Planned Hours', 'Actual Hours'],
-            datasets: [{
-                label: 'Hours',
-                data: [{{ analysis_data.planned_hours }}, {{ analysis_data.actual_hours }}],
-                backgroundColor: [
-                    'rgba(40, 167, 69, 0.6)',  // success green
-                    'rgba(23, 162, 184, 0.6)'   // info blue
-                ],
-                borderColor: [
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(23, 162, 184, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
+// Immediately invoked function to avoid global scope pollution
+(function() {
+    'use strict'; // Enable strict mode for better error checking
+    
+    // Constants for configuration
+    const REQUEST_TIMEOUT = 30000; // 30 seconds timeout for requests
+    const RETRY_COUNT = 2; // Number of times to retry a failed request
+    const RETRY_DELAY_BASE = 1000; // Base delay for exponential backoff (1 second)
+    
+    // Cache DOM elements to improve performance
+    const elements = {};
+    
+    // CSS variables for consistent theming
+    const CSS_VARIABLES = {
+        success: '#00C851',
+        error: '#ff5252',
+        warning: '#ffbb33',
+        info: '#33b5e5'
+    };
+    
+    // Simple logging function that doesn't rely on eval or complex operations
+    function log(message, type) {
+        // Get current time
+        const now = new Date();
+        const timestamp = now.toISOString();
+        const prefix = '[' + timestamp + '] ';
+        
+        // Format message
+        const fullMessage = prefix + (type ? '[' + type.toUpperCase() + '] ' : '') + message;
+        
+        // Log to browser console with appropriate method
+        if (type === 'error') {
+            console.error(fullMessage);
+        } else if (type === 'warning') {
+            console.warn(fullMessage);
+        } else {
+            console.log(fullMessage);
+        }
+        
+        // Check if debug-log element exists
+        const debugLog = document.getElementById('debug-log');
+        if (!debugLog) return;
+        
+        // Create entry element
+        const entry = document.createElement('div');
+        
+        // Set color based on message type
+        if (type === 'error') {
+            entry.style.color = CSS_VARIABLES.error;
+        } else if (type === 'warning') {
+            entry.style.color = CSS_VARIABLES.warning;
+        } else if (type === 'success') {
+            entry.style.color = CSS_VARIABLES.success;
+        } else {
+            entry.style.color = CSS_VARIABLES.info;
+        }
+        
+        // Set text content
+        entry.textContent = fullMessage;
+        
+        // Add role for accessibility
+        entry.setAttribute('role', 'log');
+        entry.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
+        
+        // Add to log (prepend for newer messages at top)
+        if (debugLog.firstChild) {
+            debugLog.insertBefore(entry, debugLog.firstChild);
+        } else {
+            debugLog.appendChild(entry);
+        }
+        
+        // Limit log entries to avoid performance issues (keep latest 100 entries)
+        const entries = debugLog.children;
+        if (entries.length > 100) {
+            for (let i = 100; i < entries.length; i++) {
+                debugLog.removeChild(entries[i]);
             }
         }
-    });
-
-    window.updateAnalysis = function() {
-        const portfolioId = document.getElementById('portfolioSelect').value;
-        if (!portfolioId) return;
-
-        fetch(`/admin/portfolios/${portfolioId}/analysis-data`)
-            .then(response => response.json())
-            .then(data => {
-                // Update summary cards
-                document.querySelector('.bg-primary h3').textContent = data.total_hours;
-                document.querySelector('.bg-success h3').textContent = data.planned_hours;
-                document.querySelector('.bg-info h3').textContent = data.actual_hours;
-                document.querySelector('.bg-warning h3').textContent = data.discrepancy;
-
-                // Update chart
-                analysisChart.data.datasets[0].data = [data.planned_hours, data.actual_hours];
-                analysisChart.update();
-            })
-            .catch(error => {
-                console.error('Error fetching analysis data:', error);
-                alert('Error updating analysis data');
+    }
+    
+    // Display a user-friendly message in the UI
+    function showMessage(message, type) {
+        try {
+            // Find or create alert container
+            let alertContainer = document.getElementById('alert-container');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.id = 'alert-container';
+                alertContainer.className = 'mb-3';
+                alertContainer.setAttribute('role', 'alert');
+                alertContainer.setAttribute('aria-live', 'assertive');
+                
+                const filtersContainer = document.querySelector('.filters-container');
+                if (filtersContainer) {
+                    filtersContainer.parentNode.insertBefore(alertContainer, filtersContainer);
+                } else {
+                    const cardBody = document.querySelector('.card-body');
+                    if (cardBody) {
+                        // Insert after debug section
+                        const debugSection = document.querySelector('.debug-section');
+                        if (debugSection) {
+                            debugSection.after(alertContainer);
+                        } else {
+                            cardBody.prepend(alertContainer);
+                        }
+                    }
+                }
+            }
+            
+            // Create alert message
+            const alert = document.createElement('div');
+            alert.className = 'alert-message ' + (type || 'info');
+            alert.setAttribute('role', 'alert');
+            
+            // Create message container
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'd-flex align-items-center justify-content-between';
+            
+            // Create message span
+            const messageSpan = document.createElement('span');
+            messageSpan.innerHTML = message;
+            messageContainer.appendChild(messageSpan);
+            
+            // Create close button
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.style.marginLeft = '10px';
+            closeBtn.style.fontSize = '20px';
+            closeBtn.style.fontWeight = 'bold';
+            closeBtn.style.lineHeight = '20px';
+            closeBtn.setAttribute('aria-label', 'Close');
+            
+            // Add event listener to close button
+            closeBtn.addEventListener('click', function() {
+                alert.remove();
             });
-    };
-});
+            
+            messageContainer.appendChild(closeBtn);
+            alert.appendChild(messageContainer);
+            
+            // Add alert to container
+            alertContainer.appendChild(alert);
+            
+            // Auto-remove after 10 seconds for non-error messages
+            if (type !== 'error') {
+                setTimeout(function() {
+                    if (alert && alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 10000);
+            }
+            
+            log('Displayed message: ' + message, type);
+        } catch (error) {
+            log('Error displaying message: ' + error.message, 'error');
+        }
+    }
+    
+    // Display environment information
+    function showEnvironmentInfo() {
+        // Show current page URL
+        const pageUrlElement = document.getElementById('page-url');
+        if (pageUrlElement) {
+            pageUrlElement.textContent = window.location.href;
+        }
+        
+        // Check for CSRF token
+        const csrfTokenStatus = document.getElementById('csrf-token-status');
+        if (csrfTokenStatus) {
+            const metaTags = document.getElementsByTagName('meta');
+            let csrfFound = false;
+            
+            for (let i = 0; i < metaTags.length; i++) {
+                if (metaTags[i].getAttribute('name') === 'csrf-token') {
+                    const token = metaTags[i].getAttribute('content');
+                    csrfTokenStatus.textContent = token ? 
+                        'Present (first 6 chars: ' + token.substring(0, 6) + '...)' : 
+                        'Present but empty';
+                    csrfFound = true;
+                    break;
+                }
+            }
+            
+            if (!csrfFound) {
+                csrfTokenStatus.textContent = 'Not found';
+                csrfTokenStatus.style.color = 'red';
+            }
+        }
+        
+        // Display API URL info
+        const apiUrlDisplay = document.getElementById('api-url-display');
+        if (apiUrlDisplay) {
+            const portfolioSelect = document.getElementById('portfolio-select');
+            if (portfolioSelect && portfolioSelect.value) {
+                const url = '/admin/portfolios/analysis/data/' + portfolioSelect.value;
+                apiUrlDisplay.textContent = url + '?start_date=...&end_date=...';
+            } else {
+                apiUrlDisplay.textContent = '/admin/portfolios/analysis/data/{portfolio_id}?start_date=...&end_date=...';
+            }
+        }
+    }
+    
+    // Initialize date inputs with default values (last 30 days)
+    function initializeDates() {
+        try {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            const formatDateForInput = function(date) {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                return year + '-' + month + '-' + day;
+            };
+            
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            
+            if (startDateInput && endDateInput) {
+                startDateInput.value = formatDateForInput(thirtyDaysAgo);
+                endDateInput.value = formatDateForInput(today);
+                log('Date inputs initialized with default values', 'success');
+                
+                // Add validation for date range - end date can't be before start date
+                endDateInput.addEventListener('change', function() {
+                    if (startDateInput.value && endDateInput.value && endDateInput.value < startDateInput.value) {
+                        showMessage('End date cannot be before start date', 'warning');
+                        endDateInput.value = startDateInput.value;
+                    }
+                });
+                
+                startDateInput.addEventListener('change', function() {
+                    if (startDateInput.value && endDateInput.value && endDateInput.value < startDateInput.value) {
+                        endDateInput.value = startDateInput.value;
+                    }
+                });
+            } else {
+                log('Date input elements not found', 'error');
+            }
+        } catch (error) {
+            log('Error initializing dates: ' + error.message, 'error');
+        }
+    }
+    
+    // Toggle loading indicator
+    function toggleLoading(show) {
+        try {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const resultsSection = document.getElementById('results-section');
+            
+            if (loadingOverlay) {
+                loadingOverlay.style.display = show ? 'flex' : 'none';
+            } else {
+                log('Loading overlay element not found', 'warning');
+            }
+            
+            if (resultsSection) {
+                if (show) {
+                    resultsSection.style.display = 'block';
+                }
+            } else {
+                log('Results section element not found', 'warning');
+            }
+            
+            // Update ARIA attributes for screen readers
+            if (loadingOverlay) {
+                loadingOverlay.setAttribute('aria-hidden', show ? 'false' : 'true');
+                loadingOverlay.setAttribute('aria-busy', show ? 'true' : 'false');
+            }
+            if (resultsSection) {
+                resultsSection.setAttribute('aria-busy', show ? 'true' : 'false');
+            }
+    } catch (error) {
+            log('Error toggling loading state: ' + error.message, 'error');
+        }
+    }
+    
+    // Get CSRF token from meta tags with fallback to other methods
+    function getCsrfToken() {
+        try {
+            // First try meta tag
+            const metaTags = document.getElementsByTagName('meta');
+            for (let i = 0; i < metaTags.length; i++) {
+                if (metaTags[i].getAttribute('name') === 'csrf-token') {
+                    const token = metaTags[i].getAttribute('content');
+                    if (token) {
+                        log('CSRF token retrieved from meta tag', 'success');
+                        return token;
+                    }
+                }
+            }
+            
+            // Then try to check if token is in a cookie
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.indexOf('csrf_token=') === 0) {
+                    const token = cookie.substring('csrf_token='.length, cookie.length);
+                    if (token) {
+                        log('CSRF token retrieved from cookie', 'success');
+                        return token;
+                    }
+                }
+            }
+            
+            // Finally try X-CSRF-Token header if already in a previous response
+            const cachedToken = sessionStorage.getItem('csrf_token');
+            if (cachedToken) {
+                log('CSRF token retrieved from session storage', 'warning');
+                return cachedToken;
+            }
+            
+            log('No CSRF token found in any location', 'warning');
+            return null;
+        } catch (error) {
+            log('Error getting CSRF token: ' + error.message, 'error');
+            return null;
+        }
+    }
+    
+    // Update UI with the analysis data
+    function updateUI(data) {
+        try {
+            log('Updating UI with received data', 'info');
+            
+            // Log data in a safe way without relying on JSON.stringify
+            let dataStr = '';
+            if (data.total_hours !== undefined) dataStr += 'total_hours: ' + data.total_hours + ', ';
+            if (data.total_users !== undefined) dataStr += 'total_users: ' + data.total_users + ', ';
+            if (data.projects_count !== undefined) dataStr += 'projects_count: ' + data.projects_count;
+            log('Data received: ' + dataStr, 'info');
+            
+            // Update stats cards
+            const totalHoursElement = document.getElementById('total-hours');
+            const totalUsersElement = document.getElementById('total-users');
+            const projectsCountElement = document.getElementById('projects-count');
+            
+            if (totalHoursElement) {
+                const hours = parseFloat(data.total_hours || 0);
+                totalHoursElement.textContent = hours.toFixed(2);
+            }
+            
+            if (totalUsersElement) {
+                totalUsersElement.textContent = data.total_users || 0;
+            }
+            
+            if (projectsCountElement) {
+                projectsCountElement.textContent = data.projects_count || 0;
+            }
+            
+            // Update projects table
+            const tbody = document.querySelector('#projects-table tbody');
+            if (!tbody) {
+                log('Projects table body not found', 'error');
+            return;
+        }
+
+            // Clear existing rows
+            tbody.innerHTML = '';
+            
+            // Function to safely create text content
+            function createTextCell(content) {
+                const cell = document.createElement('td');
+                cell.textContent = content;
+                return cell;
+            }
+            
+            if (data.projects_data && Array.isArray(data.projects_data) && data.projects_data.length > 0) {
+                for (let i = 0; i < data.projects_data.length; i++) {
+                    const project = data.projects_data[i];
+                    const row = document.createElement('tr');
+                    
+                    // Add name cell
+                    row.appendChild(createTextCell(project.name || ''));
+                    
+                    // Add hours cell
+                    const hoursValue = parseFloat(project.hours || 0);
+                    row.appendChild(createTextCell(hoursValue.toFixed(2)));
+                    
+                    // Add users cell
+                    row.appendChild(createTextCell(project.users_count || 0));
+                    
+                    tbody.appendChild(row);
+                }
+                log('Added ' + data.projects_data.length + ' rows to the projects table', 'success');
+            } else {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.setAttribute('colspan', '3');
+                cell.className = 'text-center';
+                cell.textContent = 'No data available';
+                
+                row.appendChild(cell);
+                tbody.appendChild(row);
+                log('No project data available', 'warning');
+            }
+            
+            // Show results section
+            const resultsSection = document.getElementById('results-section');
+            if (resultsSection) {
+                resultsSection.style.display = 'block';
+                
+                // Accessibility announcement
+                const statusAnnouncement = document.createElement('div');
+                statusAnnouncement.className = 'sr-only';
+                statusAnnouncement.setAttribute('aria-live', 'polite');
+                statusAnnouncement.textContent = 'Analysis data loaded. ' +
+                    'Total hours: ' + (parseFloat(data.total_hours || 0)).toFixed(2) + 
+                    ', Total users: ' + (data.total_users || 0) + 
+                    ', Projects count: ' + (data.projects_count || 0);
+                
+                document.body.appendChild(statusAnnouncement);
+                
+                // Remove the announcement after it's been read
+                setTimeout(() => {
+                    if (statusAnnouncement.parentNode) {
+                        statusAnnouncement.parentNode.removeChild(statusAnnouncement);
+                    }
+                }, 5000);
+            }
+        } catch (error) {
+            log('Error updating UI: ' + error.message, 'error');
+            showMessage('Error updating the page with received data', 'error');
+        }
+    }
+    
+    // Fetch analysis data using regular XMLHttpRequest (no eval dependencies)
+    function fetchAnalysisData(portfolioId, startDate, endDate, retryCount) {
+        try {
+            retryCount = retryCount || 0;
+            
+            // Calculate retry delay with exponential backoff
+            const retryDelay = retryCount > 0 ? 
+                RETRY_DELAY_BASE * Math.pow(2, retryCount - 1) : RETRY_DELAY_BASE;
+            
+            // Create URL with query parameters and cache buster
+            const cacheBuster = new Date().getTime();
+            const url = '/admin/portfolios/analysis/data/' + encodeURIComponent(portfolioId) + 
+                      '?start_date=' + encodeURIComponent(startDate) + 
+                      '&end_date=' + encodeURIComponent(endDate) +
+                      '&_=' + cacheBuster;  // Add cache buster to prevent caching
+            
+            // Update API URL display
+            const apiUrlDisplay = document.getElementById('api-url-display');
+            if (apiUrlDisplay) {
+                apiUrlDisplay.textContent = url;
+            }
+            
+            log('Preparing to fetch data from: ' + url, 'info');
+            
+            // Get CSRF token
+            const csrfToken = getCsrfToken();
+            if (!csrfToken) {
+                log('No CSRF token found - will attempt request without it', 'warning');
+                // Show a warning message to the user
+                showMessage('Warning: CSRF token not found. This may affect data loading.', 'warning');
+            }
+            
+            // Create XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            
+            // Set timeout
+            xhr.timeout = REQUEST_TIMEOUT;
+            
+            // Set headers
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            xhr.setRequestHeader('Pragma', 'no-cache');
+            xhr.setRequestHeader('Expires', '0');
+            
+            if (csrfToken) {
+                // Try both header formats since Flask-WTF might expect either
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+                xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+                
+                // Cache the token for future requests - use sessionStorage instead of localStorage
+                try {
+                    sessionStorage.setItem('csrf_token', csrfToken);
+                } catch (e) {
+                    log('Could not cache CSRF token: ' + e.message, 'warning');
+                }
+            }
+            
+            // Debug request headers
+            log('Request headers set for API call', 'info');
+            
+            // Set up response handler
+            xhr.onreadystatechange = function() {
+                // Only log state changes when needed
+                if (xhr.readyState === 1) {
+                    log('XHR: Connection established', 'info');
+                } else if (xhr.readyState === 4) {
+                    log('XHR: Request complete with status: ' + xhr.status, 'info');
+                    
+                    // Request complete - hide loading indicator
+                    toggleLoading(false);
+                    
+                    // Enable submit button
+                    const submitButton = document.getElementById('load-analysis-btn');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = '<i class="fas fa-sync"></i> Load Analysis';
+                    }
+                    
+                    // Handle response based on status
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        log('Response received with status: ' + xhr.status, 'success');
+                        
+                        // Check for new CSRF token in response headers
+                        const newCsrfToken = xhr.getResponseHeader('X-CSRF-Token');
+                        if (newCsrfToken) {
+                            log('Updated CSRF token from response headers', 'info');
+                            try {
+                                sessionStorage.setItem('csrf_token', newCsrfToken);
+                            } catch (e) {
+                                log('Could not update cached CSRF token: ' + e.message, 'warning');
+                            }
+                        }
+                        
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            
+                if (response.status === 'success' && response.data) {
+                                log('Valid response data received', 'success');
+                                updateUI(response.data);
+                                showMessage('Analysis data loaded successfully!', 'success');
+                            } else {
+                                const errorMessage = response.message || 'Unknown error occurred';
+                                log('API returned error: ' + errorMessage, 'error');
+                                showMessage('Error: ' + errorMessage, 'error');
+                            }
+                        } catch (error) {
+                            log('Error parsing response: ' + error.message, 'error');
+                            
+                            // Only log first 500 chars to avoid overwhelming the log
+                            const truncatedResponse = xhr.responseText.substring(0, 500) + 
+                                (xhr.responseText.length > 500 ? '...' : '');
+                            log('Response text (truncated): ' + truncatedResponse, 'error');
+                            
+                            showMessage('Error parsing server response. Please check the debug log for details.', 'error');
+                        }
+                    } else if (xhr.status === 0) {
+                        // This usually means a network error or timeout
+                        log('Request failed: Network error or request aborted', 'error');
+                        
+                        // Retry logic for network errors with exponential backoff
+                        if (retryCount < RETRY_COUNT) {
+                            log('Retrying request in ' + (retryDelay/1000) + ' seconds (attempt ' + 
+                                (retryCount + 1) + ' of ' + RETRY_COUNT + ')', 'warning');
+                            
+                            setTimeout(function() {
+                                fetchAnalysisData(portfolioId, startDate, endDate, retryCount + 1);
+                            }, retryDelay);
+                            
+                            showMessage('Network error detected. Retrying in ' + (retryDelay/1000) + 
+                                        ' seconds (' + (retryCount + 1) + '/' + RETRY_COUNT + ')', 'warning');
+                        } else {
+                            showMessage('Network error. Please check your connection and try again.', 'error');
+                        }
+                    } else {
+                        let errorMessage = 'Request failed with status ' + xhr.status;
+                        
+                        try {
+                            const errorResponse = JSON.parse(xhr.responseText);
+                            if (errorResponse.message) {
+                                errorMessage += ': ' + errorResponse.message;
+                            }
+                        } catch (e) {
+                            // Log parsing error
+                            log('Could not parse error response: ' + e.message, 'warning');
+                        }
+                        
+                        log('Request failed: ' + errorMessage, 'error');
+                        showMessage('Error: ' + errorMessage, 'error');
+                    }
+                }
+            };
+            
+            // Handle timeout
+            xhr.ontimeout = function() {
+                log('Request timed out after ' + (REQUEST_TIMEOUT / 1000) + ' seconds', 'error');
+                
+                const submitButton = document.getElementById('load-analysis-btn');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-sync"></i> Load Analysis';
+                }
+                
+                toggleLoading(false);
+                
+                // Retry logic for timeouts with exponential backoff
+                if (retryCount < RETRY_COUNT) {
+                    log('Retrying request in ' + (retryDelay/1000) + ' seconds (attempt ' + 
+                        (retryCount + 1) + ' of ' + RETRY_COUNT + ')', 'warning');
+                    
+                    setTimeout(function() {
+                        fetchAnalysisData(portfolioId, startDate, endDate, retryCount + 1);
+                    }, retryDelay);
+                    
+                    showMessage('Request timed out. Retrying in ' + (retryDelay/1000) + 
+                                ' seconds (' + (retryCount + 1) + '/' + RETRY_COUNT + ')', 'warning');
+                } else {
+                    showMessage('The server is taking too long to respond. Please try again later.', 'error');
+                }
+            };
+            
+            // Handle network errors
+            xhr.onerror = function(e) {
+                log('Network error occurred', 'error');
+                
+                const submitButton = document.getElementById('load-analysis-btn');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = '<i class="fas fa-sync"></i> Load Analysis';
+                }
+                
+                toggleLoading(false);
+                
+                // Retry logic for network errors with exponential backoff
+                if (retryCount < RETRY_COUNT) {
+                    log('Retrying request in ' + (retryDelay/1000) + ' seconds (attempt ' + 
+                        (retryCount + 1) + ' of ' + RETRY_COUNT + ')', 'warning');
+                    
+                    setTimeout(function() {
+                        fetchAnalysisData(portfolioId, startDate, endDate, retryCount + 1);
+                    }, retryDelay);
+                    
+                    showMessage('Network error detected. Retrying in ' + (retryDelay/1000) + 
+                                ' seconds (' + (retryCount + 1) + '/' + RETRY_COUNT + ')', 'warning');
+                } else {
+                    showMessage('A network error occurred. Please check your connection and try again.', 'error');
+                }
+            };
+            
+            // Send the request
+            log('Sending request to: ' + url, 'info');
+            xhr.send();
+            
+        } catch (error) {
+            log('Error fetching analysis data: ' + error.message, 'error');
+            showMessage('Error: ' + error.message, 'error');
+            
+            const submitButton = document.getElementById('load-analysis-btn');
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fas fa-sync"></i> Load Analysis';
+            }
+            
+            toggleLoading(false);
+        }
+    }
+    
+    // Validate date range
+    function validateDateRange(startDate, endDate) {
+        // Convert to Date objects
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        // Check if dates are valid
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return {
+                valid: false,
+                message: 'Invalid date format'
+            };
+        }
+        
+        // Check if end date is after start date
+        if (end < start) {
+            return {
+                valid: false,
+                message: 'End date must be after start date'
+            };
+        }
+        
+        // Check if date range is not too large (e.g., 1 year max)
+        const oneYear = 365 * 24 * 60 * 60 * 1000; // milliseconds in a year
+        if (end - start > oneYear) {
+            return {
+                valid: false,
+                message: 'Date range cannot exceed 1 year'
+            };
+        }
+        
+        return { valid: true };
+    }
+    
+    // Handle form submission
+    function handleFormSubmit(event) {
+        try {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            log('Analysis form submitted', 'info');
+            
+            // Get form values
+            const portfolioSelect = document.getElementById('portfolio-select');
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            
+            if (!portfolioSelect || !startDateInput || !endDateInput) {
+                log('Form elements not found', 'error');
+                showMessage('Form elements not found. Please refresh the page and try again.', 'error');
+                return;
+            }
+            
+            const portfolioId = portfolioSelect.value;
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            // Validate inputs
+            if (!portfolioId) {
+                log('No portfolio selected', 'error');
+                showMessage('Please select a portfolio', 'warning');
+                portfolioSelect.focus();
+                return;
+            }
+            
+            if (!startDate) {
+                log('No start date selected', 'error');
+                showMessage('Please select a start date', 'warning');
+                startDateInput.focus();
+                return;
+            }
+            
+            if (!endDate) {
+                log('No end date selected', 'error');
+                showMessage('Please select an end date', 'warning');
+                endDateInput.focus();
+                return;
+            }
+            
+            // Additional date validation
+            const dateValidation = validateDateRange(startDate, endDate);
+            if (!dateValidation.valid) {
+                log('Date validation failed: ' + dateValidation.message, 'error');
+                showMessage(dateValidation.message, 'warning');
+                return;
+            }
+            
+            log('Fetching analysis data for portfolio: ' + portfolioId + 
+                ', date range: ' + startDate + ' to ' + endDate, 'info');
+            
+            // Clear previous results
+            const totalHoursElement = document.getElementById('total-hours');
+            const totalUsersElement = document.getElementById('total-users');
+            const projectsCountElement = document.getElementById('projects-count');
+            const projectsTable = document.querySelector('#projects-table tbody');
+            
+            if (totalHoursElement) totalHoursElement.textContent = '0';
+            if (totalUsersElement) totalUsersElement.textContent = '0';
+            if (projectsCountElement) projectsCountElement.textContent = '0';
+            if (projectsTable) projectsTable.innerHTML = '';
+            
+            // Disable submit button
+            const submitButton = document.getElementById('load-analysis-btn');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                submitButton.setAttribute('aria-busy', 'true');
+            }
+            
+            // Show loading spinner
+            toggleLoading(true);
+            
+            // Accessibility announcement
+            const statusAnnouncement = document.createElement('div');
+            statusAnnouncement.className = 'sr-only';
+            statusAnnouncement.setAttribute('aria-live', 'polite');
+            statusAnnouncement.textContent = 'Loading analysis data, please wait...';
+            document.body.appendChild(statusAnnouncement);
+            
+            // Fetch data
+            fetchAnalysisData(portfolioId, startDate, endDate);
+            
+            // Remove the announcement after it's been read
+            setTimeout(() => {
+                if (statusAnnouncement.parentNode) {
+                    statusAnnouncement.parentNode.removeChild(statusAnnouncement);
+                }
+            }, 2000);
+        } catch (error) {
+            log('Error handling form submission: ' + error.message, 'error');
+            showMessage('An error occurred: ' + error.message, 'error');
+        }
+    }
+    
+    // Initialize page
+    function initializePage() {
+        try {
+            log('Initializing portfolio analysis page', 'info');
+            
+            // Cache commonly used DOM elements
+            elements.form = document.getElementById('analysis-form');
+            elements.portfolioSelect = document.getElementById('portfolio-select');
+            elements.startDateInput = document.getElementById('start-date');
+            elements.endDateInput = document.getElementById('end-date');
+            elements.submitButton = document.getElementById('load-analysis-btn');
+            elements.loadingOverlay = document.getElementById('loading-overlay');
+            elements.resultsSection = document.getElementById('results-section');
+            
+            // Add ARIA attributes for better accessibility
+            if (elements.form) {
+                elements.form.setAttribute('aria-describedby', 'form-description');
+                const formDescription = document.createElement('div');
+                formDescription.id = 'form-description';
+                formDescription.className = 'sr-only';
+                formDescription.textContent = 'This form allows you to analyze portfolio data within a specific date range.';
+                elements.form.prepend(formDescription);
+            }
+            
+            if (elements.portfolioSelect) {
+                elements.portfolioSelect.addEventListener('change', function() {
+                    // Update API URL display when portfolio changes
+                    const apiUrlDisplay = document.getElementById('api-url-display');
+                    if (apiUrlDisplay && elements.portfolioSelect.value) {
+                        const url = '/admin/portfolios/analysis/data/' + elements.portfolioSelect.value;
+                        apiUrlDisplay.textContent = url + '?start_date=...&end_date=...';
+                    }
+                });
+            }
+            
+            // Show environment info
+            showEnvironmentInfo();
+            
+            // Initialize dates
+            initializeDates();
+            
+            // Set up form submission handler
+            if (elements.form) {
+                elements.form.addEventListener('submit', handleFormSubmit);
+                log('Form submission handler registered', 'success');
+            } else {
+                log('Analysis form not found', 'error');
+            }
+
+            log('Page initialization complete', 'success');
+        } catch (error) {
+            log('Error during page initialization: ' + error.message, 'error');
+        }
+    }
+    
+    // Run initialization when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePage);
+        log('DOMContentLoaded event listener registered', 'info');
+    } else {
+        log('DOM already loaded, initializing immediately', 'info');
+        initializePage();
+    }
+})();
 </script>
+
+<!-- Przestarzałe style zostały przeniesione do głównego pliku CSS -->
 {% endblock %} 

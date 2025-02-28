@@ -1,0 +1,399 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report.name }} - Reports - Jira Analysis{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>{{ report.name }}</h1>
+                    {% if report.description %}
+                    <p class="text-muted">{{ report.description }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="runReport({{ report.id }})">
+                        <i class="bi bi-play"></i> Run Report
+                    </button>
+                    <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editReportModal">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Report Details</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Type</dt>
+                        <dd class="col-sm-8">{{ report.report_type }}</dd>
+
+                        <dt class="col-sm-4">Schedule</dt>
+                        <dd class="col-sm-8">{{ report.schedule or 'Manual' }}</dd>
+
+                        <dt class="col-sm-4">Created By</dt>
+                        <dd class="col-sm-8">{{ report.created_by.username if report.created_by else 'System' }}</dd>
+
+                        <dt class="col-sm-4">Created At</dt>
+                        <dd class="col-sm-8">{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
+
+                        <dt class="col-sm-4">Last Run</dt>
+                        <dd class="col-sm-8">
+                            {% if report.last_run_at %}
+                            {{ report.last_run_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                            Never
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            {% if report.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Parameters</h5>
+                </div>
+                <div class="card-body">
+                    {% set params = report.get_parameters() %}
+                    {% if params %}
+                    <dl class="row">
+                        {% for key, value in params.items() %}
+                        <dt class="col-sm-4">{{ key }}</dt>
+                        <dd class="col-sm-8">{{ value if value is not none else 'Not set' }}</dd>
+                        {% endfor %}
+                    </dl>
+                    {% else %}
+                    <p class="text-muted">No parameters set</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Latest Results</h5>
+                </div>
+                <div class="card-body">
+                    {% if latest_result %}
+                        {% if latest_result.status == 'completed' %}
+                            {% set result_data = latest_result.result_data|tojson %}
+                            <div id="reportVisualization"></div>
+                            <hr>
+                            <div class="accordion" id="resultAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#rawData">
+                                            Raw Data
+                                        </button>
+                                    </h2>
+                                    <div id="rawData" class="accordion-collapse collapse">
+                                        <div class="accordion-body">
+                                            <pre><code>{{ result_data }}</code></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% elif latest_result.status == 'failed' %}
+                            <div class="alert alert-danger">
+                                <h4 class="alert-heading">Error</h4>
+                                <p>{{ latest_result.error_message }}</p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Report is {{ latest_result.status }}...
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            No results available. Run the report to see results.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Report Modal -->
+<div class="modal fade" id="editReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editReportForm">
+                    <div class="mb-3">
+                        <label for="reportName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="reportName" name="name" 
+                               value="{{ report.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="reportDescription" name="description" 
+                                  rows="3">{{ report.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportSchedule" class="form-label">Schedule (Cron Expression)</label>
+                        <input type="text" class="form-control" id="reportSchedule" name="schedule" 
+                               value="{{ report.schedule }}"
+                               placeholder="e.g., 0 0 * * * for daily at midnight">
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="reportActive" name="is_active"
+                                   {% if report.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="reportActive">
+                                Active
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="updateReport()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let reportChart = null;
+
+function runReport(reportId) {
+    fetch(`/api/reports/${reportId}/run`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Error running report: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error running report');
+    });
+}
+
+function updateReport() {
+    const form = document.getElementById('editReportForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    // Convert checkbox value to boolean
+    data.is_active = formData.get('is_active') === 'on';
+    
+    fetch(`/api/reports/{{ report.id }}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Error updating report: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating report');
+    });
+}
+
+function visualizeReport(data) {
+    const container = document.getElementById('reportVisualization');
+    
+    // Clear previous visualization
+    if (reportChart) {
+        reportChart.destroy();
+    }
+    container.innerHTML = '';
+    
+    if (!data) return;
+    
+    switch ('{{ report.report_type }}') {
+        case 'leave_usage':
+            visualizeLeaveUsage(data);
+            break;
+        case 'team_availability':
+            visualizeTeamAvailability(data);
+            break;
+        case 'cost_tracking':
+            visualizeCostTracking(data);
+            break;
+        case 'project_allocation':
+            visualizeProjectAllocation(data);
+            break;
+    }
+}
+
+function visualizeLeaveUsage(data) {
+    const users = Object.keys(data.leave_usage);
+    const leaveTypes = new Set();
+    const datasets = {};
+    
+    // Collect all leave types
+    users.forEach(user => {
+        Object.keys(data.leave_usage[user]).forEach(type => leaveTypes.add(type));
+    });
+    
+    // Prepare datasets
+    Array.from(leaveTypes).forEach(type => {
+        datasets[type] = users.map(user => data.leave_usage[user][type] || 0);
+    });
+    
+    const chartData = {
+        labels: users,
+        datasets: Object.entries(datasets).map(([type, data]) => ({
+            label: type,
+            data: data,
+            backgroundColor: getRandomColor()
+        }))
+    };
+    
+    reportChart = new Chart(document.getElementById('reportVisualization'), {
+        type: 'bar',
+        data: chartData,
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true }
+            }
+        }
+    });
+}
+
+function visualizeTeamAvailability(data) {
+    const users = Object.keys(data.team_availability);
+    const availability = users.map(user => data.team_availability[user].availability_percentage);
+    
+    reportChart = new Chart(document.getElementById('reportVisualization'), {
+        type: 'bar',
+        data: {
+            labels: users,
+            datasets: [{
+                label: 'Availability %',
+                data: availability,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+function visualizeCostTracking(data) {
+    const projects = Object.keys(data.cost_tracking);
+    const costs = projects.map(project => data.cost_tracking[project].total_cost);
+    
+    reportChart = new Chart(document.getElementById('reportVisualization'), {
+        type: 'pie',
+        data: {
+            labels: projects,
+            datasets: [{
+                data: costs,
+                backgroundColor: projects.map(() => getRandomColor())
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+}
+
+function visualizeProjectAllocation(data) {
+    const projects = Object.keys(data.project_allocation);
+    const planned = projects.map(project => data.project_allocation[project].planned_hours);
+    const actual = projects.map(project => data.project_allocation[project].actual_hours);
+    
+    reportChart = new Chart(document.getElementById('reportVisualization'), {
+        type: 'bar',
+        data: {
+            labels: projects,
+            datasets: [
+                {
+                    label: 'Planned Hours',
+                    data: planned,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Actual Hours',
+                    data: actual,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+// Initialize visualization if data is available
+{% if latest_result and latest_result.status == 'completed' %}
+visualizeReport({{ latest_result.result_data|tojson|safe }});
+{% endif %}
+</script>
+{% endblock %} 

@@ -1,117 +1,548 @@
-{% extends "base.html" %}
+{% extends "admin/base_admin.html" %}
 
 {% block title %}Team Management{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Team Management</h1>
+{% block head %}
+{{ super() }}
+<style>
+    /* Podstawowe style bez zależności od zewnętrznych bibliotek */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        overflow: auto;
+    }
     
-    <!-- Add Team Button -->
-    <div class="mb-4">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#teamModal">
-            <i class="bi bi-plus-circle"></i> Add Team
-        </button>
+    .modal.show {
+        display: block;
+    }
+    
+    .modal-dialog {
+        margin: 30px auto;
+        max-width: 800px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+    }
+    
+    .modal-content {
+        position: relative;
+        padding: 20px;
+    }
+    
+    .modal-header {
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-title {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+    
+    .modal-body {
+        padding: 15px 0;
+    }
+    
+    .modal-footer {
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: flex-end;
+    }
+    
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+    
+    /* Form styles */
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    
+    .form-text {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .invalid-feedback {
+        display: none;
+        color: #dc3545;
+        font-size: 0.875rem;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .is-invalid + .invalid-feedback {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Team Management</h1>
+        <a href="{{ url_for('admin.manage_teams') }}?action=add" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-1"></i> Add Team
+        </a>
     </div>
-    
-    <!-- Teams Table -->
-    <div class="table-responsive">
-        <table class="table table-striped" id="teamsTable">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Members</th>
-                    <th>Projects</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for team in teams %}
-                <tr>
-                    <td>{{ team.name }}</td>
-                    <td>{{ team.description }}</td>
-                    <td>{{ team.members|length }}</td>
-                    <td>{{ team.projects|length }}</td>
-                    <td>
-                        <button class="btn btn-sm btn-info" onclick="viewTeam({{ team.id }})">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-primary" onclick="editTeam({{ team.id }})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteTeam({{ team.id }})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    
-    <!-- Team Modal -->
-    <div class="modal fade" id="teamModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Team</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="teamForm">
-                        {{ form.hidden_tag() }}
-                        <div class="mb-3">
-                            {{ form.name.label(class="form-label") }}
-                            {{ form.name(class="form-control") }}
-                        </div>
-                        <div class="mb-3">
-                            {{ form.description.label(class="form-label") }}
-                            {{ form.description(class="form-control") }}
-                        </div>
-                        <div class="mb-3">
-                            {{ form.members.label(class="form-label") }}
-                            {{ form.members(class="form-select select2", multiple=True) }}
-                        </div>
-                        <div class="mb-3">
-                            {{ form.projects.label(class="form-label") }}
-                            {{ form.projects(class="form-select select2", multiple=True) }}
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="saveTeam()">Save</button>
-                </div>
-            </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Teams List</h6>
         </div>
-    </div>
-    
-    <!-- Team View Modal -->
-    <div class="modal fade" id="teamViewModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Team Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Members</h6>
-                            <ul class="list-group" id="teamMembers"></ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Projects</h6>
-                            <ul class="list-group" id="teamProjects"></ul>
-                        </div>
-                    </div>
-                </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="teamsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Leader</th>
+                            <th>Members</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for team in teams %}
+                        <tr>
+                            <td>{{ team.name }}</td>
+                            <td>{{ team.description }}</td>
+                            <td>
+                                {% if team.leader %}
+                                {{ team.leader.display_name or team.leader.username }}
+                                {% else %}
+                                <span class="text-muted">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ team.members|length }}</td>
+                            <td>
+                                <div class="btn-group" role="group" aria-label="Team actions">
+                                    <a href="{{ url_for('admin.get_team', team_id=team.id) }}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.manage_teams') }}?action=edit&team_id={{ team.id }}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('admin.manage_teams') }}" style="display:inline;" id="deleteForm_{{ team.id }}" class="delete-team-form">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="team_id" value="{{ team.id }}">
+                                        <button type="button" class="btn btn-danger btn-sm delete-team-btn" data-team-id="{{ team.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Team Form Section -->
+{% if request.args.get('action') == 'add' or request.args.get('action') == 'edit' %}
+<div id="teamFormModal" class="modal show">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ request.args.get('action')|capitalize }} Team</h5>
+                <a href="{{ url_for('admin.manage_teams') }}" class="close-btn">&times;</a>
+            </div>
+            <div class="modal-body">
+                <form id="teamForm" method="POST" action="{{ url_for('admin.manage_teams') }}">
+                    {{ form.csrf_token }}
+                    
+                    {% if request.args.get('action') == 'edit' %}
+                    <input type="hidden" name="team_id" value="{{ request.args.get('team_id') }}">
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        {{ form.name.label(class="form-label") }}
+                        <span class="text-danger">*</span>
+                        {{ form.name(class="form-control", required=true) }}
+                        <small class="form-text">Enter a unique and descriptive name for the team.</small>
+                        <div class="invalid-feedback">Please enter a valid team name.</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows=3) }}
+                        <small class="form-text">Provide a brief description of the team's purpose and responsibilities.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.leader_id.label(class="form-label") }}
+                        <span class="text-danger">*</span>
+                        {{ form.leader_id(class="form-control", required=true) }}
+                        <small class="form-text">Select a team leader who will be responsible for this team.</small>
+                        <div class="invalid-feedback">Please select a team leader.</div>
+                    </div>
+                    
+                    {% if has_portfolio_field %}
+                    <div class="form-group">
+                        {{ form.portfolio_id.label(class="form-label") }}
+                        {{ form.portfolio_id(class="form-control") }}
+                        <small class="form-text">Select a portfolio this team belongs to (optional).</small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        {{ form.members.label(class="form-label") }}
+                        {{ form.members(class="form-control", multiple=true, size=5) }}
+                        <small class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple members.</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        {{ form.projects.label(class="form-label") }}
+                        {{ form.projects(class="form-control", multiple=true, size=5) }}
+                        <small class="form-text">Hold Ctrl (or Cmd on Mac) to select multiple projects.</small>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <a href="{{ url_for('admin.manage_teams') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Team</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Team View Modal -->
+{% if view_mode or request.path == url_for('admin.get_team', team_id=request.view_args.team_id if request.view_args else 0) %}
+<div id="teamViewModal" class="modal show">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Team Details: {{ team.name }}</h5>
+                <a href="{{ url_for('admin.manage_teams') }}" class="close-btn">&times;</a>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Team Members</h6>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                {% if team.members %}
+                                    {% for member in team.members %}
+                                    <li class="list-group-item">
+                                        {{ member.display_name or member.username }}
+                                        {% if member.id == team.leader_id %}
+                                        <span class="badge bg-primary">Leader</span>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li class="list-group-item text-muted">No members assigned</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Team Projects</h6>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                {% if team.assigned_projects %}
+                                    {% for project in team.assigned_projects %}
+                                    <li class="list-group-item">
+                                        {{ project.name }}
+                                    </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li class="list-group-item text-muted">No projects assigned</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if team.portfolio %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Portfolio</h6>
+                            </div>
+                            <div class="card-body">
+                                <h5>{{ team.portfolio.name }}</h5>
+                                {% if team.portfolio.description %}
+                                <p class="text-muted">{{ team.portfolio.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('admin.manage_teams') }}" class="btn btn-secondary">Close</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
 
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/admin/teams.js') }}"></script>
+{% block scripts %}
+{{ super() }}
+<script>
+// ========== Funkcje pomocnicze ==========
+// Funkcja logująca - pomaga w debugowaniu
+function logDebug(message, obj) {
+    if (typeof console !== 'undefined') {
+        if (obj) {
+            console.log('[TeamDebug] ' + message, obj);
+        } else {
+            console.log('[TeamDebug] ' + message);
+        }
+    }
+}
+
+// ========== Inicjalizacja dokumentu ==========
+document.addEventListener('DOMContentLoaded', function() {
+    logDebug("DOM załadowany - inicjalizacja komponentów zarządzania zespołami");
+    
+    // Inicjalizacja walidacji formularza
+    initializeTeamForm();
+    
+    // Inicjalizacja przycisków usuwania
+    initializeDeleteButtons();
+    
+    // Inicjalizacja tabeli zespołów (jeśli biblioteka DataTable jest dostępna)
+    initializeTeamTable();
+    
+    // Ręczna inicjalizacja select2 - bez użycia eval
+    initializeSelect2();
+});
+
+// ========== Inicjalizacja Select2 ==========
+function initializeSelect2() {
+    logDebug("Próba inicjalizacji Select2 bez użycia eval()");
+    
+    // Bezpieczne sprawdzenie, czy jQuery i Select2 są dostępne
+    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
+        try {
+            // Wybór elementów do inicjalizacji Select2
+            var selectElements = [
+                '#leader_id',
+                '#portfolio_id',
+                '#members',
+                '#projects'
+            ];
+            
+            // Konfiguracja dla pojedynczego wyboru
+            var singleConfig = {
+                width: '100%',
+                placeholder: 'Select an option',
+                allowClear: true
+            };
+            
+            // Konfiguracja dla wielokrotnego wyboru
+            var multiConfig = {
+                width: '100%',
+                placeholder: 'Select options',
+                allowClear: true
+            };
+            
+            // Inicjalizuj każdy element, jeśli istnieje
+            selectElements.forEach(function(selector) {
+                var $element = jQuery(selector);
+                if ($element.length) {
+                    logDebug("Inicjalizacja Select2 dla elementu: " + selector);
+                    
+                    // Określ, czy to pojedynczy czy wielokrotny wybór
+                    var isMultiple = $element.attr('multiple') !== undefined;
+                    var config = isMultiple ? multiConfig : singleConfig;
+                    
+                    // Zastosuj Select2
+                    $element.select2(config);
+                }
+            });
+            
+            logDebug("Select2 zainicjalizowane pomyślnie");
+        } catch (err) {
+            logDebug("Błąd podczas inicjalizacji Select2:", err);
+        }
+    } else {
+        logDebug("Select2 nie jest dostępne - pomijam inicjalizację");
+    }
+}
+
+// ========== Inicjalizacja formularza ==========
+function initializeTeamForm() {
+    logDebug("Inicjalizacja formularza zespołu");
+    var form = document.getElementById('teamForm');
+    
+    if (!form) {
+        logDebug("Nie znaleziono formularza zespołu");
+        return;
+    }
+    
+    // Walidacja formularza przed wysłaniem
+    form.addEventListener('submit', function(event) {
+        logDebug("Walidacja formularza przed wysłaniem");
+        
+        var isValid = true;
+        var nameField = document.getElementById('name');
+        var leaderField = document.getElementById('leader_id');
+        
+        // Walidacja pola nazwa (wymagane)
+        if (nameField && !nameField.value.trim()) {
+            nameField.classList.add('is-invalid');
+            isValid = false;
+            logDebug("Walidacja: pole name jest puste");
+        } else if (nameField) {
+            nameField.classList.remove('is-invalid');
+        }
+        
+        // Walidacja pola lider (wymagane)
+        if (leaderField && (!leaderField.value || leaderField.value === '0')) {
+            leaderField.classList.add('is-invalid');
+            isValid = false;
+            logDebug("Walidacja: pole leader_id jest nieprawidłowe");
+        } else if (leaderField) {
+            leaderField.classList.remove('is-invalid');
+        }
+        
+        if (!isValid) {
+            event.preventDefault();
+            logDebug("Formularz zawiera błędy - przerwano wysyłanie");
+            return false;
+        }
+        
+        // Logowanie wybranych wartości (dla celów debugowania)
+        var membersField = document.getElementById('members');
+        var projectsField = document.getElementById('projects');
+        var portfolioField = document.getElementById('portfolio_id');
+        
+        if (membersField) {
+            var selectedMembers = Array.from(membersField.selectedOptions || []).map(function(option) {
+                return option.value;
+            });
+            logDebug("Wybrani członkowie:", selectedMembers);
+        }
+        
+        if (projectsField) {
+            var selectedProjects = Array.from(projectsField.selectedOptions || []).map(function(option) {
+                return option.value;
+            });
+            logDebug("Wybrane projekty:", selectedProjects);
+        }
+        
+        if (portfolioField) {
+            logDebug("Wybrane portfolio:", portfolioField.value);
+        }
+        
+        logDebug("Formularz jest prawidłowy - wysyłanie");
+        return true;
+    });
+}
+
+// ========== Inicjalizacja przycisków usuwania ==========
+function initializeDeleteButtons() {
+    logDebug("Inicjalizacja przycisków usuwania zespołów");
+    
+    // Znajdujemy wszystkie przyciski usuwania
+    var deleteButtons = document.querySelectorAll('.delete-team-btn');
+    
+    // Dodajemy event listener do każdego przycisku
+    deleteButtons.forEach(function(button) {
+        button.addEventListener('click', function() {
+            var teamId = this.getAttribute('data-team-id');
+            confirmDelete(teamId);
+        });
+    });
+}
+
+// ========== Inicjalizacja tabeli ==========
+function initializeTeamTable() {
+    logDebug("Próba inicjalizacji tabeli zespołów");
+    
+    // Bezpieczne sprawdzenie dostępności DataTable
+    if (typeof jQuery !== 'undefined' && typeof jQuery.fn.DataTable === 'function') {
+        try {
+            // Inicjalizacja DataTable z minimalnymi, bezpiecznymi opcjami
+            jQuery('#teamsTable').DataTable({
+                responsive: true,
+                order: [[0, 'asc']],
+                pageLength: 25,
+                columnDefs: [
+                    { orderable: false, targets: 4 }  // Wyłączamy sortowanie dla kolumny Akcje
+                ],
+                // Unikanie problematycznych opcji, które mogą używać eval()
+                language: {
+                    processing: "Przetwarzanie...",
+                    search: "Szukaj:",
+                    lengthMenu: "Pokaż _MENU_ wpisów",
+                    info: "Wpisy od _START_ do _END_ z _TOTAL_ łącznie",
+                    infoEmpty: "Brak wpisów",
+                    infoFiltered: "(filtrowanie spośród _MAX_ dostępnych wpisów)",
+                    loadingRecords: "Ładowanie wpisów...",
+                    zeroRecords: "Brak pasujących wpisów",
+                    emptyTable: "Brak dostępnych danych"
+                }
+            });
+            logDebug("Tabela zespołów zainicjalizowana poprawnie");
+        } catch (error) {
+            logDebug("Błąd podczas inicjalizacji tabeli zespołów:", error);
+        }
+    } else {
+        logDebug("Biblioteka DataTable nie jest dostępna - pomijam inicjalizację tabeli");
+    }
+}
+
+// ========== Funkcja potwierdzająca usunięcie ==========
+function confirmDelete(teamId) {
+    logDebug("Potwierdzanie usunięcia zespołu " + teamId);
+    
+    // Preferowanie natywnego confirm zamiast SweetAlert, aby uniknąć CSP
+    if (confirm("Czy na pewno chcesz usunąć ten zespół? Ta operacja jest nieodwracalna.")) {
+        submitDeleteForm(teamId);
+    }
+}
+
+// Funkcja wysyłająca formularz usuwania
+function submitDeleteForm(teamId) {
+    logDebug("Wysyłanie formularza usuwania zespołu " + teamId);
+    var form = document.getElementById('deleteForm_' + teamId);
+    
+    if (form) {
+        form.submit();
+    } else {
+        logDebug("Nie znaleziono formularza usuwania dla zespołu " + teamId);
+        alert("Wystąpił błąd podczas usuwania zespołu. Spróbuj ponownie.");
+    }
+}
+</script>
 {% endblock %} 

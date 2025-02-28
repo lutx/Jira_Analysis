@@ -1,3 +1,62 @@
+/* Admin CSS Variables for consistent styling */
+:root {
+    /* Primary color palette */
+    --primary-color: #007bff;
+    --primary-color-dark: #0056b3;
+    --primary-color-light: #e9f2ff;
+    
+    /* Secondary color palette */
+    --secondary-color: #6c757d;
+    --secondary-color-dark: #343a40;
+    --secondary-color-light: #f8f9fa;
+    
+    /* Accent colors */
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    
+    /* Text colors */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-light: #f8f9fa;
+    
+    /* Z-index hierarchy */
+    --z-index-dropdown: 1000;
+    --z-index-navbar: 1020;
+    --z-index-sidebar: 1030;
+    --z-index-fixed: 1040;
+    --z-index-modal-backdrop: 1050;
+    --z-index-modal: 1060;
+    --z-index-popover: 1070;
+    --z-index-tooltip: 1080;
+    --z-index-loading: 2000;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 3rem;
+    
+    /* Border radius */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    
+    /* Transitions */
+    --transition-speed: 0.3s;
+    --transition-function: ease-in-out;
+    
+    /* Layout variables */
+    --sidebar-width: 250px;
+    --sidebar-width-large: 250px;
+    --sidebar-width-medium: 240px;
+    --sidebar-width-small: 220px;
+    --sidebar-width-mobile: 200px;
+    --navbar-height: 56px;
+}
+
 .badge {
     margin-right: 0.25rem;
     margin-bottom: 0.25rem;
@@ -79,17 +138,329 @@
     margin-bottom: 0.5rem;
 }
 
-/* Admin panel layout */
-.sidebar {
-    width: 250px;
+/* Admin Layout */
+body {
+    overflow-x: hidden;
+    background-color: #f4f6f9;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar styles - highest z-index */
+.navbar {
     position: fixed;
-    top: 56px;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--navbar-height);
+    z-index: var(--z-index-navbar);
+    background-color: #343a40;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+    position: relative;
+    padding-top: var(--navbar-height);
+    min-height: calc(100vh - var(--navbar-height));
+}
+
+/* Sidebar - second highest z-index */
+.sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    background: #343a40;
+    color: #fff;
+    transition: all 0.3s;
+    position: fixed;
+    top: var(--navbar-height);
     left: 0;
     bottom: 0;
-    z-index: 1000;
-    background: #343a40;
-    transition: all 0.3s ease;
+    z-index: var(--z-index-sidebar);
     overflow-y: auto;
+    height: calc(100vh - var(--navbar-height));
+    border-right: 1px solid rgba(0,0,0,.125);
+    -webkit-overflow-scrolling: touch; /* Improve scroll on iOS */
+}
+
+/* Content wrapper - lowest z-index of the three */
+.content-wrapper {
+    width: calc(100% - var(--sidebar-width));
+    margin-left: var(--sidebar-width);
+    padding: 0;
+    transition: all 0.3s;
+    background-color: #f4f6f9;
+    min-height: calc(100vh - var(--navbar-height));
+    position: relative;
+    z-index: 1010; /* Lower than sidebar */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Content header */
+.content-header {
+    padding: 1rem 1.5rem;
+    background-color: #ffffff;
+    border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    position: relative;
+    z-index: 1; /* Ensure above content */
+    width: 100%;
+}
+
+/* Main content section */
+.content {
+    padding: 1.5rem;
+    flex: 1;
+    width: 100%; /* Ensure full width */
+    max-width: 100%; /* Prevent horizontal overflow */
+}
+
+/* Container fluid - make sure it uses full width */
+.container-fluid {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Additional responsive breakpoints for better device coverage */
+/* Extra large screens (large desktops) */
+@media (min-width: 1600px) {
+    :root {
+        --sidebar-width: 280px;
+    }
+    
+    .container-fluid {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    
+    .content {
+        padding: 2rem;
+    }
+    
+    .content-header {
+        padding: 1.25rem 2rem;
+    }
+}
+
+/* Large screens (desktops, less than 1600px) */
+@media (max-width: 1599px) {
+    :root {
+        --sidebar-width: 260px;
+    }
+    
+    .sidebar {
+        min-width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+    }
+    
+    .content-wrapper {
+        width: calc(100% - var(--sidebar-width));
+        margin-left: var(--sidebar-width);
+    }
+}
+
+/* Medium screens (laptops, less than 1200px) */
+@media (max-width: 1199px) {
+    :root {
+        --sidebar-width: 240px;
+    }
+    
+    .sidebar {
+        min-width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+    }
+    
+    .content-wrapper {
+        width: calc(100% - var(--sidebar-width));
+        margin-left: var(--sidebar-width);
+    }
+    
+    .content {
+        padding: 1.25rem;
+    }
+    
+    .content-header {
+        padding: 1rem 1.25rem;
+    }
+    
+    .container-fluid {
+        padding-left: 1.25rem;
+        padding-right: 1.25rem;
+    }
+}
+
+/* Specific adjustments for 14" screens */
+@media (max-width: 1366px) {
+    :root {
+        --sidebar-width: var(--sidebar-width-small);
+    }
+    
+    .sidebar {
+        min-width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+    }
+    
+    .content-wrapper {
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+    }
+    
+    .sidebar .nav-link {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Reduce font sizes for smaller screens */
+    body {
+        font-size: 0.95rem;
+    }
+    
+    h1, .h1 {
+        font-size: 1.8rem;
+    }
+    
+    h2, .h2 {
+        font-size: 1.6rem;
+    }
+    
+    h3, .h3 {
+        font-size: 1.4rem;
+    }
+}
+
+/* Small screens (tablets, less than 992px) */
+@media (max-width: 991px) {
+    :root {
+        --sidebar-width: 220px;
+    }
+    
+    .sidebar {
+        min-width: var(--sidebar-width);
+        max-width: var(--sidebar-width);
+    }
+    
+    .content-wrapper {
+        width: calc(100% - var(--sidebar-width));
+        margin-left: var(--sidebar-width);
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 767px) {
+    :root {
+        --sidebar-width: 0;
+    }
+    
+    .sidebar {
+        min-width: 250px;
+        max-width: 250px;
+        margin-left: -250px;
+        position: fixed;
+        z-index: 1090;
+    }
+    
+    .sidebar.active {
+        margin-left: 0;
+        box-shadow: 3px 0 10px rgba(0,0,0,0.2);
+    }
+    
+    .content-wrapper {
+        width: 100%;
+        margin-left: 0;
+        transition: margin-left 0.3s;
+    }
+    
+    .content-wrapper.active {
+        margin-left: 250px;
+    }
+    
+    /* Mobile nav adjustments */
+    .sidebar .nav-link {
+        padding: 8px 15px;
+    }
+    
+    .btn {
+        padding: 0.375rem 0.75rem;
+    }
+    
+    /* Form adjustments */
+    .form-row {
+        flex-direction: column;
+        margin-right: 0;
+        margin-left: 0;
+    }
+    
+    .form-group {
+        margin-right: 0;
+        margin-left: 0;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Extra small screens (phones, less than 576px) */
+@media (max-width: 575px) {
+    .content {
+        padding: 1rem 0.75rem;
+    }
+    
+    .content-header {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .btn-toolbar .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Add a spacer for the sidebar on larger screens */
+@media (min-width: 769px) {
+    .admin-wrapper::before {
+        content: '';
+        display: block;
+        min-width: 250px;
+        max-width: 250px;
+    }
+    
+    /* Ensure consistent sidebar width across browsers */
+    @supports (-ms-ime-align: auto) {
+        /* Edge specific fix */
+        .sidebar {
+            width: 250px;
+        }
+    }
 }
 
 /* Sidebar Header */
@@ -159,30 +530,42 @@
     letter-spacing: 0.5px;
 }
 
-/* Content Wrapper */
-.content-wrapper {
-    margin-left: 250px;
-    padding: 1rem;
-    min-height: calc(100vh - 56px);
-    background: #f4f6f9;
-    transition: margin-left 0.3s ease;
-}
-
 /* Cards */
 .card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: #fff;
+    width: 100%; /* Ensure cards use full width */
+    border: 1px solid rgba(0,0,0,.125);
 }
 
 .card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0,0,0,0.125);
-    padding: 0.75rem 1.25rem;
+    padding: 1rem 1.25rem;
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header .card-title {
+    margin-bottom: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.card-body {
+    padding: 1.25rem;
+    flex: 1 1 auto;
 }
 
 /* Forms */
 .form-group {
     margin-bottom: 1rem;
+    width: 100%;
 }
 
 .form-control:focus {
@@ -192,8 +575,10 @@
 
 /* Tables */
 .table {
-    background: #fff;
-    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    width: 100% !important;
+    margin-bottom: 1rem;
+    color: #212529;
+    border-collapse: collapse;
 }
 
 .table thead th {
@@ -223,6 +608,8 @@
     margin-bottom: 1rem;
     border: none;
     box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    position: relative;
+    z-index: 1035; /* Ensure alerts appear above other content */
 }
 
 .alert-dismissible .btn-close {
@@ -349,21 +736,6 @@ body > .notifications-container .alert {
     border-color: #bee5eb;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        margin-left: -250px;
-    }
-    
-    .sidebar.show {
-        margin-left: 0;
-    }
-    
-    .content-wrapper {
-        margin-left: 0;
-    }
-}
-
 /* Log viewer styles */
 .log-viewer {
     background: #1e1e1e;
@@ -421,38 +793,6 @@ body > .notifications-container .alert {
     background: rgba(0, 0, 0, 0.2);
 }
 
-/* Section Headers */
-.content-header {
-    padding: 1rem;
-    background: #fff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    margin-bottom: 1rem;
-}
-
-.content-header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 500;
-}
-
-/* Breadcrumbs */
-.breadcrumb {
-    margin: 0;
-    padding: 0;
-    background: none;
-}
-
-/* Buttons and Interactive Elements */
-.btn-primary {
-    background-color: #007bff;
-    border-color: #007bff;
-}
-
-.btn-primary:hover {
-    background-color: #0056b3;
-    border-color: #0056b3;
-}
-
 /* Style dla panelu administracyjnego */
 .admin-panel {
     padding: 20px;
@@ -494,4 +834,1258 @@ body > .notifications-container .alert {
         width: 100%;
         margin-bottom: 5px;
     }
+}
+
+/* Improve notifications and alerts */
+.alert {
+    position: relative;
+    z-index: 1035; /* Ensure alerts appear above other content */
+}
+
+/* Fix modal z-index to appear above navbar */
+.modal {
+    z-index: 1060;
+}
+.modal-backdrop {
+    z-index: 1050;
+}
+
+/* Fix dropdown menu z-index */
+.dropdown-menu {
+    z-index: 1040;
+}
+
+/* Ensure tooltips and popovers appear above other elements */
+.tooltip {
+    z-index: 1070;
+}
+.popover {
+    z-index: 1060;
+}
+
+/* Sidebar Styling */
+.admin-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 230px;
+    background-color: var(--secondary-color-dark);
+    padding-top: 60px;
+    color: var(--text-light);
+    overflow-y: auto;
+    z-index: var(--z-index-sidebar);
+    transition: transform var(--transition-speed) var(--transition-function);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.admin-content {
+    margin-left: 230px;
+    padding: 20px;
+    transition: margin-left var(--transition-speed) var(--transition-function);
+}
+
+/* Top Navigation Bar */
+.admin-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: var(--primary-color);
+    color: var(--text-light);
+    z-index: var(--z-index-navbar);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--spacing-md);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-toggle {
+    display: none;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 24px;
+}
+
+.dropdown-menu {
+    position: absolute;
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    z-index: var(--z-index-dropdown);
+    min-width: 200px;
+    top: 100%;
+    right: 0;
+    display: none;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--z-index-loading);
+}
+
+/* Card Styling */
+.card {
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: var(--spacing-lg);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: var(--spacing-md);
+    background-color: var(--secondary-color-light);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+}
+
+.card-body {
+    padding: var(--spacing-md);
+}
+
+/* Form Styling */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 1px solid #ced4da;
+    border-radius: var(--border-radius-sm);
+    transition: border-color var(--transition-speed) var(--transition-function);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button Styling */
+.btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-speed) var(--transition-function);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-color-dark);
+    border-color: var(--primary-color-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Alert Messages */
+.alert-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    max-width: 400px;
+    z-index: var(--z-index-tooltip);
+}
+
+.alert-message {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.alert-message.success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.alert-message.error {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.alert-message.warning {
+    background-color: var(--warning-color);
+    color: var(--text-primary);
+}
+
+.alert-message.info {
+    background-color: var(--info-color);
+    color: white;
+}
+
+/* Table Styling */
+.table {
+    width: 100%;
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-primary);
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: var(--spacing-sm);
+    vertical-align: top;
+    border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid #dee2e6;
+    background-color: var(--secondary-color-light);
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Stats Cards */
+.stats-card {
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: var(--spacing-md);
+    transition: transform var(--transition-speed) var(--transition-function);
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.stats-card-title {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.stats-card-value {
+    color: var(--text-primary);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Debug Section */
+.debug-section {
+    background-color: #f8f9fa;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid #e9ecef;
+}
+
+.debug-log {
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #212529;
+    color: #f8f9fa;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Filters Container */
+.filters-container {
+    background-color: var(--secondary-color-light);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-md);
+}
+
+/* Accessibility Improvements */
+.visually-hidden:not(:focus):not(:active) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus styles for better keyboard navigation */
+a:focus, button:focus, input:focus, select:focus, textarea:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Contrast improvements for text */
+.text-contrast-high {
+    color: #000;
+    font-weight: bold;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+    .card, .btn, .form-control {
+        border: 1px solid CanvasText;
+    }
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 1200px) {
+    .admin-sidebar {
+        width: 200px;
+    }
+    
+    .admin-content {
+        margin-left: 200px;
+    }
+}
+
+@media screen and (max-width: 992px) {
+    .admin-sidebar {
+        width: 60px;
+        overflow-x: hidden;
+    }
+    
+    .admin-sidebar:hover, 
+    .admin-sidebar.expanded {
+        width: 200px;
+    }
+    
+    .admin-content {
+        margin-left: 60px;
+    }
+    
+    .sidebar-item-text {
+        display: none;
+    }
+    
+    .admin-sidebar:hover .sidebar-item-text,
+    .admin-sidebar.expanded .sidebar-item-text {
+        display: inline;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+        width: 230px;
+        z-index: var(--z-index-modal);
+    }
+    
+    .admin-sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .admin-content {
+        margin-left: 0;
+    }
+    
+    .navbar-toggle {
+        display: block;
+    }
+    
+    .sidebar-item-text {
+        display: inline;
+    }
+    
+    /* Add overlay when sidebar is shown on mobile */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: var(--z-index-sidebar); /* Just below sidebar */
+        display: none;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    /* Mobile table styles */
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Adjust cards for smaller screens */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -10px;
+        margin-left: -10px;
+    }
+    
+    .col {
+        flex-basis: 0;
+        flex-grow: 1;
+        max-width: 100%;
+        padding: 0 10px;
+    }
+    
+    /* Make forms more mobile friendly */
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    
+    .form-row > [class*="col-"] {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .admin-navbar {
+        padding: 0 var(--spacing-sm);
+    }
+    
+    .card {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .alert-container {
+        top: 70px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    /* Stack form elements on small screens */
+    .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-inline .form-control {
+        width: 100%;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    /* Make buttons full width on small screens */
+    .btn-responsive {
+        width: 100%;
+        margin-bottom: var(--spacing-sm);
+    }
+}
+
+/* Animation and Transition Utilities */
+.fade {
+    opacity: 0;
+    transition: opacity var(--transition-speed) var(--transition-function);
+}
+
+.fade.show {
+    opacity: 1;
+}
+
+.slide-down {
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: transform var(--transition-speed) var(--transition-function),
+                opacity var(--transition-speed) var(--transition-function);
+}
+
+.slide-down.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Accessibility support for print */
+@media print {
+    .admin-sidebar, .admin-navbar, .no-print {
+        display: none !important;
+    }
+    
+    .admin-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+    
+    a[href]:after {
+        content: " (" attr(href) ")";
+    }
+}
+
+/* Dark mode support */
+/* Zakomentowanie automatycznego ciemnego motywu */
+/*
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #0d6efd;
+        --primary-color-dark: #0a58ca;
+        --primary-color-light: #0a1930;
+        
+        --secondary-color: #495057;
+        --secondary-color-dark: #212529;
+        --secondary-color-light: #343a40;
+        
+        --text-primary: #f8f9fa;
+        --text-secondary: #adb5bd;
+        --text-light: #f8f9fa;
+    }
+    
+    body {
+        background-color: #121212;
+        color: var(--text-primary);
+    }
+    
+    .card {
+        background-color: #1e1e1e;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-header {
+        background-color: #2c2c2c;
+        border-bottom: 1px solid #444;
+    }
+    
+    .table {
+        color: var(--text-primary);
+    }
+    
+    .table th,
+    .table td {
+        border-top: 1px solid #444;
+    }
+    
+    .table thead th {
+        border-bottom: 2px solid #444;
+        background-color: #2c2c2c;
+    }
+    
+    .form-control {
+        background-color: #2c2c2c;
+        border: 1px solid #444;
+        color: var(--text-primary);
+    }
+    
+    .debug-section {
+        background-color: #2c2c2c;
+        border: 1px solid #444;
+    }
+    
+    .filters-container {
+        background-color: #2c2c2c;
+    }
+}
+*/
+
+/* Style dla analizy portfolio */
+.filters-container {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -10px;
+    margin-left: -10px;
+}
+
+.col-form {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    padding-right: 10px;
+    padding-left: 10px;
+    margin-bottom: 15px;
+}
+
+.debug-section {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: var(--secondary-color-light);
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius-sm);
+}
+
+.debug-log {
+    height: 200px;
+    max-height: 30vh;
+    overflow-y: auto;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: monospace;
+    padding: 10px;
+    border-radius: var(--border-radius-sm);
+}
+
+.results-section {
+    margin-top: 30px;
+    position: relative;
+}
+
+.stats-cards {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -10px;
+    margin-left: -10px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    padding-right: 10px;
+    padding-left: 10px;
+    margin-bottom: 15px;
+}
+
+.stat-card-inner {
+    padding: 15px;
+    border-radius: var(--border-radius-sm);
+    color: white;
+}
+
+.stat-card-primary {
+    background-color: var(--primary-color);
+}
+
+.stat-card-success {
+    background-color: var(--success-color);
+}
+
+.stat-card-info {
+    background-color: var(--info-color);
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Loading indicator */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-index-loading);
+    border-radius: var(--border-radius-sm);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Improved error message styling */
+.alert-message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-sm);
+    transition: opacity 0.3s ease;
+}
+
+.alert-message.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.alert-message.warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+}
+
+.alert-message.success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert-message.info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+}
+
+/* Accessibility improvements */
+:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* High contrast focus indicators */
+a:focus, button:focus, input:focus, select:focus, textarea:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Improved button hover states */
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+/* Better form validation visual cues */
+input:invalid, select:invalid {
+    border-color: var(--danger-color);
+}
+
+/* Media queries dla kart statystyk */
+@media (max-width: 992px) {
+    .col-form {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+@media (max-width: 768px) {
+    .col-form {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    .form-row {
+        display: block;
+    }
+    
+    .stat-card {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+}
+
+/* Specific adjustments for 14" screens */
+@media (max-width: 1366px) {
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    .col-form {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+}
+
+/* Logs System Styles */
+.log-container {
+    height: 600px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    padding: 15px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.log-container pre {
+    margin: 0;
+    padding: 0;
+}
+
+/* Dashboard Cards */
+.card-dashboard {
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.card-dashboard:hover {
+    transform: translateY(-5px);
+}
+
+.card-dashboard .card-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-dashboard .icon-container {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.2);
+}
+
+.card-dashboard .icon-container i {
+    font-size: 1.8rem;
+}
+
+.card-dashboard .stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-dashboard .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+.card-dashboard .stat-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+/* Add container adjustments for better use of available space */
+.container-fluid {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Add improvement to card presentation */
+.card {
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: #fff;
+    width: 100%; /* Ensure cards use full width */
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header .card-title {
+    margin-bottom: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.card-body {
+    padding: 1.25rem;
+    flex: 1 1 auto;
+}
+
+/* Improve button spacing and alignment */
+.btn-toolbar {
+    margin-bottom: 1rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
+
+.page-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Better spacing for tables */
+.table-responsive {
+    margin-bottom: 1rem;
+}
+
+/* Fix for datatables width issues */
+.dataTables_wrapper {
+    width: 100% !important;
+}
+
+.dataTables_wrapper .row {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Add additional responsive adjustments */
+@media (max-width: 1199.98px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .container-fluid {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+    
+    .card-dashboard .card-body {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .card-dashboard .icon-container {
+        margin-bottom: 10px;
+    }
+}
+
+/* Administration Styles from administration.css */
+.admin-layout {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    min-height: 100vh;
+}
+
+.admin-content {
+    padding: 2rem;
+    background: var(--background-light, #f4f6f9);
+}
+
+.admin-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.admin-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-right: 1rem;
+    background: var(--accent-color, #3498db);
+    color: white;
+}
+
+/* Add specific class for quick actions section */
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    background-color: var(--primary-color, #3f51b5);
+    color: white;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.quick-action-btn i {
+    margin-right: 0.5rem;
+}
+
+/* Better responsive layout */
+@media (max-width: 768px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        width: 0;
+        position: fixed;
+        z-index: var(--z-index-sidebar);
+        overflow-x: hidden;
+    }
+    
+    .sidebar.show {
+        width: var(--sidebar-width);
+    }
+    
+    .content-wrapper {
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .admin-content {
+        padding: 1rem;
+    }
+    
+    .quick-actions {
+        flex-direction: column;
+    }
+    
+    .quick-action-btn {
+        width: 100%;
+    }
+}
+
+/* Poprawa wypełnienia przestrzeni dla kart */
+.card {
+    margin-bottom: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    background-color: #fff;
+    width: 100%; /* Ensure cards use full width */
+    border: 1px solid rgba(0,0,0,.125);
+}
+
+.card-header {
+    padding: 1rem 1.25rem;
+    background-color: rgba(0,0,0,.03);
+    border-bottom: 1px solid rgba(0,0,0,.125);
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header .card-title {
+    margin-bottom: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+}
+
+.card-body {
+    padding: 1.25rem;
+    flex: 1 1 auto;
+}
+
+/* Optymalizacja row/col dla Bootstrap */
+.row {
+    margin-right: -0.75rem;
+    margin-left: -0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.row > [class*="col-"] {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+}
+
+/* Usuwam duplikacje dla formularzy - zostawiam tylko najnowszą wersję */
+.form-group {
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -0.75rem;
+    margin-left: -0.75rem;
+}
+
+.form-row > .form-group {
+    padding-right: 0.75rem;
+    padding-left: 0.75rem;
+}
+
+/* Usuwam duplikacje dla tabel - zostawiam tylko najnowszą wersję */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+
+.table {
+    width: 100% !important;
+    margin-bottom: 1rem;
+    color: #212529;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-top: 1px solid #dee2e6;
+}
+
+.table thead th {
+    vertical-align: bottom;
+    border-bottom: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+    font-weight: 500;
+}
+
+.dataTables_wrapper {
+    width: 100% !important;
+}
+
+.dataTables_wrapper .row {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Workload Table Styling */
+#workloadTable {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#workloadTable thead th {
+    background-color: #f0f0f0 !important;
+    color: #000 !important;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #ccc;
+    padding: 15px 10px;
+    position: relative;
+    font-weight: 700;
+}
+
+#workloadTable thead th:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #007bff;
+}
+
+#workloadTable tbody tr:hover {
+    background-color: rgba(32, 201, 151, 0.05);
+}
+
+#workloadTable td {
+    padding: 12px 8px;
+    vertical-align: middle;
+}
+
+/* Progress bar styling in workload table */
+#workloadTable .progress {
+    height: 25px;
+    border-radius: 15px;
+    background-color: #e9ecef;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+#workloadTable .progress-bar {
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+    transition: width 0.5s ease;
+}
+
+/* Better tooltips styling */
+.tooltip .tooltip-inner {
+    max-width: 300px;
+    padding: 8px 12px;
+    background-color: #343a40;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+/* Badges for utilization values */
+.utilization-value {
+    display: inline-block;
+    padding: 0.25em 0.4em;
+    font-size: 0.875em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
 }

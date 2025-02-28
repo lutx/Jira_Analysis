@@ -3,39 +3,64 @@
 {% block title %}Workload Analysis{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Workload Analysis</h1>
+<div class="container-fluid mt-4">
+    <!-- Notifications Container -->
+    <div class="notifications-container mb-3"></div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Workload Analysis</h1>
+        <div class="current-filters bg-light p-2 rounded small" id="currentFilters"></div>
+    </div>
     
     <!-- Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body bg-light p-4">
             <form id="workloadFilters" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">Team</label>
-                    <select class="form-select" name="team_id">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Team</label>
+                    <select class="form-select custom-select shadow-sm" name="team_id" id="team-select">
                         <option value="">All Teams</option>
                         {% for team in teams %}
                         <option value="{{ team.id }}">{{ team.name }}</option>
                         {% endfor %}
                     </select>
+                    <small class="form-text text-muted">Selecting a team will filter the available projects</small>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Project</label>
-                    <select class="form-select" name="project_id">
+                
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Projects</label>
+                    <select class="form-select custom-select shadow-sm" name="project_ids[]" id="project-select" multiple>
                         <option value="">All Projects</option>
                         {% for project in projects %}
-                        <option value="{{ project.id }}">{{ project.name }}</option>
+                        <option value="{{ project.id }}" data-team-ids="{% for team in project.teams %}{{ team.id }}{% if not loop.last %},{% endif %}{% endfor %}">
+                            {{ project.name }}
+                        </option>
                         {% endfor %}
                     </select>
+                    <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) to select multiple projects</small>
+                    <!-- Project selection buttons will be added here by JavaScript -->
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">Date Range</label>
-                    <input type="text" class="form-control daterange" name="date_range">
-                </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-filter"></i> Apply Filters
-                    </button>
+                
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Date Range</label>
+                    <div class="input-group date-picker-container shadow-sm">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-calendar-range"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 custom-date-input" 
+                               name="date_range" id="date-range-picker" 
+                               placeholder="Select date range">
+                    </div>
+                    <small class="form-text text-muted">Select a date range for the report</small>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary shadow-sm" id="apply-filters-btn">
+                            <i class="bi bi-filter"></i> Apply Filters
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -45,13 +70,13 @@
     <div class="row">
         <!-- Team Workload -->
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
                     <h5 class="mb-0">Team Workload Distribution</h5>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container" data-chart-type="workload" data-chart-data="{{ team_workload_data }}">
-                        <canvas></canvas>
+                    <div class="chart-container" data-chart-type="workload" style="position: relative; height: 300px;">
+                        <canvas id="team-workload-chart"></canvas>
                     </div>
                 </div>
             </div>
@@ -59,13 +84,13 @@
         
         <!-- User Workload -->
         <div class="col-md-6 mb-4">
-            <div class="card">
-                <div class="card-header">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
                     <h5 class="mb-0">User Workload Distribution</h5>
                 </div>
                 <div class="card-body">
-                    <div class="chart-container" data-chart-type="workload" data-chart-data="{{ user_workload_data }}">
-                        <canvas></canvas>
+                    <div class="chart-container" data-chart-type="workload" style="position: relative; height: 300px;">
+                        <canvas id="user-workload-chart"></canvas>
                     </div>
                 </div>
             </div>
@@ -73,40 +98,82 @@
     </div>
     
     <!-- Detailed Stats -->
-    <div class="card">
-        <div class="card-header">
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Detailed Statistics</h5>
+            <span class="badge bg-light text-dark fs-6 fw-bold" id="reportPeriod">Last 30 days</span>
         </div>
         <div class="card-body">
+            <!-- Objaśnienie parametrów -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info p-3 small">
+                        <h6 class="fw-bold mb-2">Parametry tabeli:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Total Hours</strong> - łączna liczba godzin przepracowanych w wybranym okresie</li>
+                            <li><strong>Projects</strong> - liczba projektów, w których dana osoba/zespół uczestniczył</li>
+                            <li><strong>Average Daily Hours</strong> - średnia dzienna liczba przepracowanych godzin</li>
+                            <li><strong>Utilization</strong> - procentowe wykorzystanie czasu pracy (zakładając 8h dziennie dla każdego użytkownika). <span class="text-danger fw-bold">UWAGA:</span> Wartości mogą być nieprecyzyjne, ponieważ system nie uwzględnia indywidualnych norm czasu pracy użytkowników, urlopów czy nieobecności.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Adnotacja o dokładności wyliczeń -->
+            <div class="alert alert-warning small mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Ważna informacja:</strong> Wyliczenia wykorzystania (Utilization) są oparte na standardowym czasie pracy 8h dziennie <strong>tylko dla dni roboczych (bez weekendów)</strong>, bez uwzględnienia indywidualnych norm czasowych użytkowników, dni wolnych, urlopów czy nieobecności. Wartości powyżej 100% wskazują na przekroczenie tej normy, a bardzo niskie mogą wynikać z braku danych w systemie lub częściowej pracy. <strong>W przyszłych wersjach planuje się dodanie pola określającego indywidualne normy czasowe dla użytkowników.</strong>
+            </div>
+            
+            <!-- Legenda wykorzystania -->
+            <div class="mb-3 border-bottom pb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="fw-bold fs-5">Legenda wykorzystania:</div>
+                    <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center me-3">
+                            <div class="progress" style="width: 60px; height: 20px;">
+                                <div class="progress-bar bg-danger" style="width: 100%"></div>
+                            </div>
+                            <span class="ms-2">Poniżej 50%</span>
+                        </div>
+                        <div class="d-flex align-items-center me-3">
+                            <div class="progress" style="width: 60px; height: 20px;">
+                                <div class="progress-bar bg-warning" style="width: 100%"></div>
+                            </div>
+                            <span class="ms-2">50%-75%</span>
+                        </div>
+                        <div class="d-flex align-items-center me-3">
+                            <div class="progress" style="width: 60px; height: 20px;">
+                                <div class="progress-bar bg-info" style="width: 100%"></div>
+                            </div>
+                            <span class="ms-2">75%-90%</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="progress" style="width: 60px; height: 20px;">
+                                <div class="progress-bar bg-success" style="width: 100%"></div>
+                            </div>
+                            <span class="ms-2">Powyżej 90%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="table-responsive">
-                <table class="table table-striped" id="workloadTable">
-                    <thead>
+                <table class="table table-striped table-hover border" id="workloadTable">
+                    <thead class="table-dark">
                         <tr>
-                            <th>Name</th>
-                            <th>Total Hours</th>
-                            <th>Projects</th>
-                            <th>Average Daily Hours</th>
-                            <th>Utilization</th>
+                            <th scope="col" class="fw-bold fs-5 py-3 text-dark">Name</th>
+                            <th scope="col" class="fw-bold fs-5 py-3 text-center text-dark">Total Hours</th>
+                            <th scope="col" class="fw-bold fs-5 py-3 text-center text-dark">Projects</th>
+                            <th scope="col" class="fw-bold fs-5 py-3 text-center text-dark">Average Daily Hours</th>
+                            <th scope="col" class="fw-bold fs-5 py-3 text-dark">Utilization</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for stat in detailed_stats %}
+                        <!-- Filled dynamically via JavaScript -->
                         <tr>
-                            <td>{{ stat.name }}</td>
-                            <td>{{ stat.total_hours }}</td>
-                            <td>{{ stat.projects_count }}</td>
-                            <td>{{ stat.avg_daily_hours }}</td>
-                            <td>
-                                <div class="progress">
-                                    <div class="progress-bar bg-{{ 'success' if stat.utilization < 80 else 'warning' if stat.utilization < 100 else 'danger' }}" 
-                                         role="progressbar" 
-                                         style="width: {{ stat.utilization }}%">
-                                        {{ stat.utilization }}%
-                                    </div>
-                                </div>
-                            </td>
+                            <td colspan="5" class="text-center">Select filters and click Apply to view workload data</td>
                         </tr>
-                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -116,11 +183,168 @@
 {% endblock %}
 
 {% block extra_css %}
+<!-- DateRangePicker CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+<style>
+    /* Loading overlay styling */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    /* Chart container styling */
+    .chart-container {
+        position: relative;
+        min-height: 300px;
+        width: 100%;
+    }
+    
+    /* DataTable loading state */
+    #workloadTable_wrapper.loading {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    
+    /* Multi-select styling */
+    select[multiple] {
+        overflow-y: auto;
+        background-image: none !important;
+        height: auto !important;
+        min-height: 150px !important;
+    }
+    
+    /* Date range display styling */
+    .report-date-range {
+        background-color: rgba(0, 123, 255, 0.05);
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Current filters display styling */
+    .current-filters {
+        background-color: #f8f9fa;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        max-width: 60%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Styling for DateRangePicker */
+    .daterangepicker {
+        z-index: 9999 !important;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        border: 1px solid #dee2e6 !important;
+    }
+    
+    .daterangepicker td.active, .daterangepicker td.active:hover {
+        background-color: #007bff !important;
+    }
+    
+    .daterangepicker .ranges li.active {
+        background-color: #007bff !important;
+    }
+    
+    /* Fix for datepicker display */
+    .date-picker-container {
+        position: relative;
+        z-index: 1000;
+    }
+    
+    .custom-date-input {
+        cursor: pointer;
+        background-color: #fff !important;
+    }
+    
+    /* Custom select styling */
+    .custom-select {
+        appearance: auto !important;
+        -webkit-appearance: auto !important;
+        -moz-appearance: auto !important;
+    }
+    
+    /* Improved styling for notification alerts */
+    .notifications-container .alert {
+        margin-bottom: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    /* Make alerts permanent by adding this class */
+    .alert-permanent {
+        display: block !important;
+    }
+    
+    /* Animation for alert dismissal */
+    .alert.fade {
+        transition: opacity 0.15s linear;
+    }
+    
+    /* Progress bar styling */
+    .progress {
+        height: 20px;
+        margin-bottom: 0;
+        background-color: #e9ecef;
+    }
+    
+    .progress-bar {
+        line-height: 20px;
+        color: white;
+        text-align: center;
+        white-space: nowrap;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+    
+    /* Modal for loading */
+    #loadingModal .modal-dialog {
+        display: flex;
+        align-items: center;
+        height: calc(100% - 60px);
+    }
+    
+    /* Make sure table headers are visible and text is readable */
+    .table-dark {
+        background-color: #343a40;
+    }
+    
+    /* Ensure text contrast for readability */
+    .table-dark .text-dark {
+        color: #f8f9fa !important; /* Override with important to ensure visibility */
+    }
+    
+    /* Additional header styling to ensure visibility */
+    #workloadTable thead th {
+        position: relative;
+        z-index: 2;
+        font-weight: bold;
+    }
+</style>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
+<!-- Required libraries -->
 <script src="https://cdn.jsdelivr.net/npm/moment/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script src="{{ url_for('static', filename='js/admin/workload.js') }}"></script>
+<script>
+// Override the auto-dismiss functionality for alerts
+document.addEventListener('DOMContentLoaded', function() {
+    // Find all auto-dismiss scripts and prevent them from running
+    const alertElements = document.querySelectorAll('.alert');
+    alertElements.forEach(function(alert) {
+        alert.classList.add('alert-permanent');
+    });
+});
+</script>
 {% endblock %} 

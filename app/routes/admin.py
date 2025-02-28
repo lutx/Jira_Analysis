@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app, render_template, flash, redirect, url_for, send_from_directory, session
+from flask import Blueprint, request, jsonify, current_app, render_template, flash, redirect, url_for, send_from_directory, session, abort, send_file
 from flask_login import login_required, current_user
 from app.decorators import admin_required
 from app.utils.db import get_db
@@ -8,7 +8,8 @@ from app.models.user import User
 from app.models.role import Role
 from app.models.user_role import UserRole
 from app.models.team import Team
-from app.models.portfolio import Portfolio
+from app.models.team_membership import TeamMembership as TeamMember
+from app.models.portfolio import Portfolio, portfolio_projects
 from app.models.project import Project
 from app.extensions import db, cache, csrf
 from flask_wtf.csrf import generate_csrf
@@ -36,8 +37,14 @@ import requests
 from pathlib import Path
 from app.models.leave_request import LeaveRequest
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import text
+from sqlalchemy import text, func, distinct
 import traceback
+import time
+import hashlib
+import bleach
+from werkzeug.exceptions import HTTPException
+from functools import wraps
+import threading
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 logger = logging.getLogger(__name__)
@@ -221,126 +228,315 @@ def manage_role(role_id):
 def manage_teams():
     """Team management page."""
     try:
-        # Initialize form first to catch any form-related errors
+        logger.info("Starting manage_teams view")
+        
+        # Get all active users and projects
+        users = User.query.filter_by(is_active=True).all()
+        projects = Project.query.filter_by(is_active=True).all()
+        
+        # Initialize form
         form = TeamForm()
         logger.info("TeamForm initialized")
         
+        # Get all teams with their relationships
+        teams = Team.query.all()
+        
+        # Check if portfolio_id field exists in the form
+        has_portfolio_field = hasattr(form, 'portfolio_id')
+        logger.info(f"Form has portfolio_id field: {has_portfolio_field}")
+        
+        # Jeśli w żądaniu GET przekazany jest action=edit i team_id, załaduj dane zespołu do formularza
+        if request.method == 'GET' and request.args.get('action') == 'edit' and request.args.get('team_id'):
+            try:
+                team_id = request.args.get('team_id')
+                logger.info(f"Loading team for edit: team_id={team_id}")
+                team = Team.query.get_or_404(team_id)
+                
+                # Przygotowanie danych zespołu do edycji
+                form.name.data = team.name
+                form.description.data = team.description
+                
+                if team.leader_id:
+                    form.leader_id.data = team.leader_id
+                    logger.info(f"Setting leader_id={team.leader_id}")
+                
+                # Set portfolio_id if field exists and team has portfolio_id
+                if has_portfolio_field and hasattr(team, 'portfolio_id') and team.portfolio_id:
+                    form.portfolio_id.data = team.portfolio_id
+                    logger.info(f"Setting portfolio_id={team.portfolio_id}")
+                
+                # Zaznaczenie członków zespołu
+                member_ids = []
+                if hasattr(team, 'members') and callable(getattr(team, 'members')):
+                    members = team.members
+                    if members:
+                        member_ids = [member.id for member in members]
+                        logger.info(f"Setting members from team.members property: {member_ids}")
+                elif hasattr(team, 'team_members'):
+                    member_ids = [tm.user_id for tm in team.team_members if tm.user_id]
+                    logger.info(f"Setting members from team.team_members: {member_ids}")
+                
+                form.members.data = member_ids
+                
+                # Zaznaczenie przypisanych projektów
+                if hasattr(team, 'assigned_projects'):
+                    project_ids = [project.id for project in team.assigned_projects]
+                    form.projects.data = project_ids
+                    logger.info(f"Setting projects: {project_ids}")
+                
+                # Przekazanie obiektu zespołu do szablonu
+                return render_template(
+                    'admin/teams/index.html',
+                    teams=teams,
+                    team=team,
+                    form=form,
+                    users=users,
+                    projects=projects,
+                    has_portfolio_field=has_portfolio_field
+                )
+            except Exception as e:
+                logger.error(f"Error loading team for edit: {str(e)}", exc_info=True)
+                flash('Error loading team data for editing.', 'danger')
+        
         # Handle form submission
         if request.method == 'POST':
-            if form.validate_on_submit():
+            logger.info(f"Processing POST request: {request.form}")
+            
+            # Obsługa usuwania zespołu
+            if request.form.get('action') == 'delete':
                 try:
-                    # Start a transaction
-                    db.session.begin_nested()
+                    team_id = request.form.get('team_id')
+                    if team_id:
+                        team = Team.query.get_or_404(team_id)
+                        logger.info(f"Deleting team {team.id} - {team.name}")
+                        
+                        # Usuń najpierw powiązania
+                        TeamMembership.query.filter_by(team_id=team.id).delete()
+                        logger.info(f"Removed all team memberships for team {team.id}")
+                        
+                        # Wyczyść projekty
+                        team.assigned_projects = []
+                        logger.info(f"Cleared assigned projects for team {team.id}")
+                        
+                        # Usuń zespół
+                        db.session.delete(team)
+                        db.session.commit()
+                        flash('Team deleted successfully.', 'success')
+                    return redirect(url_for('admin.manage_teams'))
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"Error deleting team: {str(e)}", exc_info=True)
+                    flash('Error deleting team.', 'danger')
+                    return redirect(url_for('admin.manage_teams'))
+            
+            # Standardowa obsługa tworzenia/edycji zespołu
+            logger.info(f"Form validation started. CSRF token: {form.csrf_token.current_token}")
+            if form.validate_on_submit():
+                logger.info("Form validated successfully")
+                try:
+                    # Get team_id from form (if it's an update)
+                    team_id = request.form.get('team_id')
+                    logger.info(f"Team ID from form: {team_id}")
                     
-                    # Create new team
-                    team = Team(
-                        name=form.name.data,
-                        description=form.description.data,
-                        is_active=True
-                    )
-                    logger.info(f"Created team object with name: {team.name}")
-                    
-                    # Set leader if selected
-                    if form.leader_id.data and form.leader_id.data != 0:
-                        leader = User.query.get(form.leader_id.data)
-                        if leader:
-                            team.leader_id = leader.id
-                            logger.info(f"Set team leader: {leader.username}")
+                    if team_id:
+                        # Update existing team
+                        team = Team.query.get_or_404(team_id)
+                        logger.info(f"Updating existing team: {team.id} - {team.name}")
+                        team.name = form.name.data
+                        team.description = form.description.data
+                        
+                        # Set leader if selected
+                        if form.leader_id.data:
+                            team.leader_id = form.leader_id.data
+                            logger.info(f"Set leader_id to {team.leader_id}")
                         else:
-                            raise ValueError('Selected leader not found')
+                            team.leader_id = None
+                            logger.info("No leader selected, set to None")
+                            
+                        # Set portfolio if field exists and is selected
+                        if has_portfolio_field and form.portfolio_id.data:
+                            team.portfolio_id = form.portfolio_id.data
+                            logger.info(f"Set portfolio_id to {team.portfolio_id}")
+                        elif has_portfolio_field:
+                            team.portfolio_id = None
+                            logger.info("No portfolio selected, set to None")
+                            
+                        # Save team
+                        db.session.add(team)
+                        db.session.flush()
+                        logger.info(f"Updated basic team info for {team.id}")
+                        flash('Team updated successfully.', 'success')
+                    else:
+                        # Create new team
+                        logger.info("Creating new team")
+                        team = Team(
+                            name=form.name.data,
+                            description=form.description.data,
+                            is_active=True
+                        )
+                        
+                        # Set leader if selected
+                        if form.leader_id.data:
+                            team.leader_id = form.leader_id.data
+                            logger.info(f"Set leader_id to {team.leader_id}")
+                        
+                        # Set portfolio if field exists and is selected
+                        if has_portfolio_field and form.portfolio_id.data:
+                            team.portfolio_id = form.portfolio_id.data
+                            logger.info(f"Set portfolio_id to {team.portfolio_id}")
+                        
+                        # Save team
+                        db.session.add(team)
+                        db.session.flush()  # Flush to get the team ID
+                        logger.info(f"Created new team with ID {team.id}")
+                        flash('Team created successfully.', 'success')
                     
-                    # Set portfolio if selected and portfolio_id exists in Team model
-                    if hasattr(Team, 'portfolio_id') and form.portfolio_id.data and form.portfolio_id.data != 0:
-                        portfolio = Portfolio.query.get(form.portfolio_id.data)
-                        if portfolio:
-                            team.portfolio_id = portfolio.id
-                            logger.info(f"Set team portfolio: {portfolio.name}")
-                        else:
-                            raise ValueError('Selected portfolio not found')
+                    # Clear existing members
+                    TeamMembership.query.filter_by(team_id=team.id).delete()
+                    logger.info(f"Deleted existing memberships for team {team.id}")
                     
-                    # Add team to session
-                    db.session.add(team)
-                    db.session.flush()  # Get team ID
-                    logger.info(f"Added team to session with ID: {team.id}")
+                    # Clear existing projects
+                    team.assigned_projects = []
+                    logger.info(f"Cleared existing projects for team {team.id}")
                     
                     # Add members
                     if form.members.data:
+                        logger.info(f"Adding members: {form.members.data}")
                         for user_id in form.members.data:
-                            try:
-                                member = User.query.get(user_id)
-                                if member:
-                                    membership = team.add_member(member)
-                                    if membership:
-                                        logger.info(f"Added member {member.username} to team")
-                                    else:
-                                        logger.warning(f"Failed to add member {member.username} to team")
-                                else:
-                                    logger.warning(f"Member with ID {user_id} not found")
-                            except Exception as e:
-                                logger.error(f"Error adding member {user_id}: {str(e)}")
-                                continue
+                            user = User.query.get(user_id)
+                            if user:
+                                # Create membership manually
+                                membership = TeamMembership(
+                                    team_id=team.id,
+                                    user_id=user.id,
+                                    role='leader' if user.id == team.leader_id else 'member'
+                                )
+                                db.session.add(membership)
+                                logger.info(f"Added user {user.id} to team {team.id}")
                     
-                    # Commit the transaction
+                    # Add projects
+                    if form.projects.data:
+                        logger.info(f"Adding projects: {form.projects.data}")
+                        project_list = []
+                        for project_id in form.projects.data:
+                            project = Project.query.get(project_id)
+                            if project:
+                                project_list.append(project)
+                        
+                        team.assigned_projects = project_list
+                        logger.info(f"Set {len(project_list)} projects to team {team.id}")
+                    
+                    # Final commit
                     db.session.commit()
-                    flash('Team created successfully.', 'success')
+                    logger.info(f"Successfully saved team {team.id}")
                     return redirect(url_for('admin.manage_teams'))
                     
-                except ValueError as ve:
-                    db.session.rollback()
-                    logger.warning(f"Validation error in team creation: {str(ve)}")
-                    flash(str(ve), 'danger')
-                except SQLAlchemyError as e:
-                    db.session.rollback()
-                    logger.error(f"Database error in team creation: {str(e)}", exc_info=True)
-                    flash('Database error occurred while creating team.', 'danger')
                 except Exception as e:
                     db.session.rollback()
-                    logger.error(f"Unexpected error in team creation: {str(e)}", exc_info=True)
-                    flash('An unexpected error occurred while creating team.', 'danger')
+                    logger.error(f"Error saving team: {str(e)}", exc_info=True)
+                    flash('Error saving team.', 'danger')
             else:
-                # Form validation failed
+                logger.warning(f"Form validation failed. Errors: {form.errors}")
                 for field, errors in form.errors.items():
                     for error in errors:
                         flash(f'{getattr(form, field).label.text}: {error}', 'danger')
-                        logger.warning(f"Form validation error - {field}: {error}")
         
-        # Get all teams for display using raw SQL to avoid model mapping issues
-        teams = []
-        result = db.session.execute(text("""
-            SELECT t.id, t.name, t.description, t.leader_id, t.is_active, t.created_at, t.updated_at,
-                   u.username as leader_username, u.display_name as leader_display_name,
-                   COUNT(tm.id) as member_count
-            FROM teams t
-            LEFT JOIN users u ON t.leader_id = u.id
-            LEFT JOIN team_memberships tm ON t.id = tm.team_id
-            GROUP BY t.id
-        """))
-        
-        for row in result:
-            team_dict = {
-                'id': row.id,
-                'name': row.name,
-                'description': row.description,
-                'leader': {
-                    'username': row.leader_username,
-                    'display_name': row.leader_display_name
-                } if row.leader_username else None,
-                'members_count': row.member_count,
-                'is_active': row.is_active,
-                'created_at': row.created_at,
-                'updated_at': row.updated_at
-            }
-            teams.append(team_dict)
+        # Render template for GET requests
+        return render_template(
+            'admin/teams/index.html',
+            teams=teams,
+            form=form,
+            users=users,
+            projects=projects,
+            has_portfolio_field=has_portfolio_field
+        )
             
-        logger.info(f"Retrieved {len(teams)} teams")
-        
-        # Render template with teams and form
-        return render_template('admin/teams.html', teams=teams, form=form)
-        
     except Exception as e:
         logger.error(f"Error in manage_teams view: {str(e)}", exc_info=True)
         flash('An error occurred while managing teams.', 'danger')
         return redirect(url_for('admin.index'))
+
+@admin_bp.route('/teams/<int:team_id>', methods=['GET'])
+@login_required
+@admin_required
+def get_team(team_id):
+    """Get team details."""
+    try:
+        team = Team.query.get_or_404(team_id)
+        
+        # Jeśli żądanie jest z oczekiwaniem JSON (API), zwróć dane JSON
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            # Prepare team data including members and projects
+            team_data = {
+                'id': team.id,
+                'name': team.name,
+                'description': team.description,
+                'leader_id': team.leader_id,
+                'members': [],
+                'projects': []
+            }
+            
+            # Get team members
+            if hasattr(team, 'memberships'):
+                for membership in team.memberships:
+                    if membership.user:
+                        user_data = {
+                            'id': membership.user.id,
+                            'username': membership.user.username,
+                            'display_name': membership.user.display_name or membership.user.username
+                        }
+                        team_data['members'].append(user_data)
+            elif hasattr(team, 'team_members'):
+                for membership in team.team_members:
+                    if membership.user:
+                        user_data = {
+                            'id': membership.user.id,
+                            'username': membership.user.username,
+                            'display_name': membership.user.display_name or membership.user.username
+                        }
+                        team_data['members'].append(user_data)
+            
+            # Get team projects
+            for project in team.assigned_projects:
+                project_data = {
+                    'id': project.id,
+                    'name': project.name
+                }
+                team_data['projects'].append(project_data)
+            
+            return jsonify(team_data)
+        
+        # Dla normalnych żądań z przeglądarki, renderuj szablon
+        users = User.query.filter_by(is_active=True).all()
+        projects = Project.query.filter_by(is_active=True).all()
+        form = TeamForm()
+        
+        # Debugowanie: sprawdź, czy lista członków i projektów jest poprawnie dostępna
+        logger.info(f"Team {team.id} has {len(team.members) if hasattr(team, 'members') else 0} members")
+        logger.info(f"Team {team.id} has {len(team.assigned_projects) if hasattr(team, 'assigned_projects') else 0} projects")
+        
+        return render_template(
+            'admin/teams/index.html',
+            teams=Team.query.all(),
+            team=team,
+            form=form,
+            users=users,
+            projects=projects,
+            view_mode=True  # Dodaj flagę, aby szablon wiedział, że jesteśmy w trybie podglądu
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting team {team_id}: {str(e)}", exc_info=True)
+        flash('Error viewing team details.', 'danger')
+        return redirect(url_for('admin.manage_teams'))
+
+@admin_bp.route('/teams/create', methods=['GET'])
+@login_required
+@admin_required
+def redirect_team_create():
+    """Redirect to team management page."""
+    flash('Please use the team management page to create teams.', 'info')
+    return redirect(url_for('admin.manage_teams'))
 
 @admin_bp.route('/projects', methods=['GET', 'POST'])
 @login_required
@@ -440,13 +636,41 @@ def settings():
         flash('Error loading settings.', 'danger')
         return redirect(url_for('admin.index'))
 
-@admin_bp.route('/portfolios')
+@admin_bp.route('/portfolios', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_portfolios():
     """List all portfolios with CRUD actions."""
     try:
         from app.models.portfolio import Portfolio
+        form = PortfolioForm()
+        
+        # Handle form submission for creating new portfolio
+        if request.method == 'POST' and form.validate_on_submit():
+            try:
+                portfolio = Portfolio(
+                    name=form.name.data,
+                    description=form.description.data,
+                    is_active=True,
+                    created_by=current_user.username
+                )
+                
+                # Add selected projects if any
+                if form.projects.data:
+                    from app.models.project import Project
+                    for project_id in form.projects.data:
+                        project = Project.query.get(project_id)
+                        if project:
+                            portfolio.projects.append(project)
+                
+                db.session.add(portfolio)
+                db.session.commit()
+                flash('Portfolio zostało utworzone.', 'success')
+                return redirect(url_for('admin.manage_portfolios'))
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                logger.error(f"Database error creating portfolio: {str(e)}")
+                flash('Błąd bazy danych podczas tworzenia portfolio.', 'error')
         
         # Try to migrate schema if needed
         try:
@@ -460,7 +684,7 @@ def manage_portfolios():
         try:
             # Try to fetch portfolios
             portfolios = Portfolio.query.all()
-            return render_template('admin/portfolios/list.html', portfolios=portfolios)
+            return render_template('admin/portfolios/list.html', portfolios=portfolios, form=form)
         except Exception as e:
             # If there's an error fetching portfolios, try running migrations again
             logger.error(f"Error fetching portfolios, attempting to fix schema: {str(e)}")
@@ -471,7 +695,7 @@ def manage_portfolios():
             
             # Try fetching again
             portfolios = Portfolio.query.all()
-            return render_template('admin/portfolios/list.html', portfolios=portfolios)
+            return render_template('admin/portfolios/list.html', portfolios=portfolios, form=form)
             
     except Exception as e:
         current_app.logger.error(f"Error in manage_portfolios view: {str(e)}", exc_info=True)
@@ -498,23 +722,15 @@ def portfolio_assignments():
 @login_required
 @admin_required
 def portfolio_analysis():
-    """Display analytics for portfolios (planned vs actual hours)."""
+    """Portfolio analysis view."""
+    current_app.logger.info("Accessing portfolio analysis view")
     try:
-        # For demonstration, we pass dummy aggregated data.
-        analysis_data = {
-             "total_hours": 1200,
-             "planned_hours": 1500,
-             "actual_hours": 1200,
-             "discrepancy": 300
-        }
-        from app.models.portfolio import Portfolio
         portfolios = Portfolio.query.all()
-        return render_template('admin/portfolios/analysis.html',
-                                portfolios=portfolios,
-                                analysis_data=analysis_data)
+        current_app.logger.info(f"Found {len(portfolios)} portfolios")
+        return render_template('admin/portfolios/analysis.html', portfolios=portfolios)
     except Exception as e:
-        current_app.logger.error(f"Error loading portfolio analysis: {str(e)}")
-        flash("Error loading portfolio analysis", "error")
+        current_app.logger.error(f"Error in portfolio analysis view: {str(e)}", exc_info=True)
+        flash('Error loading portfolios', 'error')
         return redirect(url_for('admin.index'))
 
 @admin_bp.route('/portfolios/seed')
@@ -1484,7 +1700,312 @@ def delete_worklog(worklog_id):
 @login_required
 @admin_required
 def workload_report():
-    return render_template('admin/reports/workload.html')
+    """Render the workload report template with all necessary data for filtering."""
+    try:
+        # Get all active teams for filtering
+        teams = Team.query.filter_by(is_active=True).order_by(Team.name).all()
+        logger.debug(f"Loaded {len(teams)} active teams for workload report")
+        
+        # Get all active projects for filtering
+        projects = Project.query.filter_by(is_active=True).order_by(Project.name).all()
+        logger.debug(f"Loaded {len(projects)} active projects for workload report")
+        
+        # Ensure projects have teams data loaded
+        for project in projects:
+            if not hasattr(project, 'teams'):
+                # If project doesn't have teams attribute, load them manually
+                project.teams = db.session.query(Team).join(
+                    ProjectTeam, ProjectTeam.team_id == Team.id
+                ).filter(
+                    ProjectTeam.project_id == project.id
+                ).all()
+                logger.debug(f"Manually loaded {len(project.teams)} teams for project {project.id}: {project.name}")
+        
+        logger.info("Rendering workload report template with teams and projects data")
+        return render_template(
+            'admin/reports/workload.html',
+            teams=teams,
+            projects=projects
+        )
+    except Exception as e:
+        logger.error(f"Error loading workload report: {str(e)}", exc_info=True)
+        flash('Error loading workload report', 'danger')
+        return redirect(url_for('admin.index'))
+
+@admin_bp.route('/reports/workload/data')
+@login_required
+@admin_required
+def get_workload_data():
+    """API endpoint that returns workload data for the report."""
+    try:
+        # Get filter parameters
+        team_id = request.args.get('team_id')
+        
+        # Handle multiple project IDs selection
+        project_ids = request.args.getlist('project_ids[]')
+        
+        # Date range handling
+        date_range = request.args.get('date_range')
+        
+        # Parse date range
+        start_date = None
+        end_date = None
+        if date_range:
+            dates = date_range.split(' - ')
+            if len(dates) == 2:
+                start_date = datetime.strptime(dates[0], '%Y-%m-%d')
+                end_date = datetime.strptime(dates[1], '%Y-%m-%d')
+        else:
+            # Default to last 30 days
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=30)
+        
+        logger.debug(f"Generating workload report with filters: team_id={team_id}, project_ids={project_ids}, date_range={date_range}")
+        
+        # Initialize data structures for the response
+        team_workload = {
+            'labels': [],
+            'datasets': [{
+                'label': 'Team Hours',
+                'data': [],
+                'backgroundColor': []
+            }]
+        }
+        
+        user_workload = {
+            'labels': [],
+            'datasets': [{
+                'label': 'User Hours',
+                'data': [],
+                'backgroundColor': []
+            }]
+        }
+        
+        detailed_stats = []
+        
+        # Base query for users who have logged time
+        user_query = db.session.query(
+            User.id,
+            User.display_name,
+            func.sum(Worklog.time_spent_seconds).label('total_time'),
+            func.count(distinct(Project.id)).label('projects_count')
+        ).join(
+            Worklog, Worklog.user_id == User.id
+        ).join(
+            Project, Project.id == Worklog.project_id
+        ).filter(
+            User.is_active == True
+        )
+        
+        # Apply date range filter
+        if start_date:
+            user_query = user_query.filter(Worklog.work_date >= start_date)
+        if end_date:
+            user_query = user_query.filter(Worklog.work_date <= end_date)
+        
+        # Apply team filter if provided
+        team_members = []
+        team_name = "All Teams"
+        if team_id:
+            team = Team.query.get(team_id)
+            if team:
+                team_name = team.name
+                team_members = [member.id for member in team.members]
+                user_query = user_query.filter(User.id.in_(team_members))
+        
+        # Apply project filter if provided
+        if project_ids:
+            # Multiple project selection
+            if len(project_ids) > 0 and project_ids[0] != '':
+                user_query = user_query.filter(Worklog.project_id.in_(project_ids))
+                logger.debug(f"Filtering by {len(project_ids)} projects: {project_ids}")
+        
+        # Group and execute user query
+        user_results = user_query.group_by(User.id).all()
+        
+        # Get team data
+        team_results = []
+        team_project_filter = {}
+        
+        # If specific team is selected, we only need that team's data
+        if team_id:
+            team_query = db.session.query(
+                Team.id,
+                Team.name,
+                func.sum(Worklog.time_spent_seconds).label('total_time'),
+                func.count(distinct(Project.id)).label('projects_count')
+            ).join(
+                TeamMember, TeamMember.team_id == Team.id
+            ).join(
+                Worklog, Worklog.user_id == TeamMember.user_id
+            ).join(
+                Project, Project.id == Worklog.project_id
+            ).filter(
+                Team.is_active == True,
+                Team.id == team_id
+            )
+            
+            # Apply date range filter
+            if start_date:
+                team_query = team_query.filter(Worklog.work_date >= start_date)
+            if end_date:
+                team_query = team_query.filter(Worklog.work_date <= end_date)
+                
+            # Apply project filter if provided
+            if project_ids and len(project_ids) > 0 and project_ids[0] != '':
+                team_query = team_query.filter(Worklog.project_id.in_(project_ids))
+                team_project_filter = {int(pid): True for pid in project_ids}
+                
+            # Group and execute team query
+            team_results = team_query.group_by(Team.id).all()
+        else:
+            # If no team is selected, get data for all teams
+            team_query = db.session.query(
+                Team.id,
+                Team.name,
+                func.sum(Worklog.time_spent_seconds).label('total_time'),
+                func.count(distinct(Project.id)).label('projects_count')
+            ).join(
+                TeamMember, TeamMember.team_id == Team.id
+            ).join(
+                Worklog, Worklog.user_id == TeamMember.user_id
+            ).join(
+                Project, Project.id == Worklog.project_id
+            ).filter(
+                Team.is_active == True
+            )
+            
+            # Apply date range filter
+            if start_date:
+                team_query = team_query.filter(Worklog.work_date >= start_date)
+            if end_date:
+                team_query = team_query.filter(Worklog.work_date <= end_date)
+                
+            # Apply project filter if provided
+            if project_ids and len(project_ids) > 0 and project_ids[0] != '':
+                team_query = team_query.filter(Worklog.project_id.in_(project_ids))
+                team_project_filter = {int(pid): True for pid in project_ids}
+                
+            # Group and execute team query
+            team_results = team_query.group_by(Team.id).all()
+        
+        # Process team results
+        colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69',
+                 '#4d5c68', '#3e5c76', '#2e5984', '#1e5f8f', '#0f639a', '#0068a5', '#006db0']
+        
+        # Define the working days counting function at the top level of the function
+        # Calculate working days (exclude weekends)
+        def count_working_days(start_date, end_date):
+            working_days = 0
+            current_date = start_date
+            while current_date <= end_date:
+                # Check if current date is a weekday (0-4 for Monday to Friday)
+                if current_date.weekday() < 5:
+                    working_days += 1
+                current_date += timedelta(days=1)
+            return working_days
+        
+        # Add "All Teams" entry if we have multiple teams
+        if len(team_results) > 1 or not team_id:
+            # Calculate total hours across all teams
+            total_team_hours = sum(result.total_time for result in team_results) / 3600
+            total_projects_count = sum(result.projects_count for result in team_results)
+            
+            team_workload['labels'].append("All Teams")
+            team_workload['datasets'][0]['data'].append(round(total_team_hours, 2))
+            team_workload['datasets'][0]['backgroundColor'].append(colors[0])
+            
+            # Calculate working days in the date range
+            working_days = count_working_days(start_date, end_date) if start_date and end_date else 0
+            
+            detailed_stats.append({
+                'name': "All Teams",
+                'total_hours': round(total_team_hours, 2),
+                'projects_count': total_projects_count,
+                'avg_daily_hours': round(total_team_hours / ((end_date - start_date).days + 1), 2) if start_date and end_date else 0,
+                # Note: Using hardcoded 8 hour workday - in future versions this should be replaced with user-specific work norms
+                'utilization': min(round((total_team_hours / (8 * working_days * len(user_results))) * 100, 2) if user_results and start_date and end_date and working_days > 0 else 0, 100)
+            })
+        
+        # Add individual team results
+        for i, result in enumerate(team_results):
+            color_index = (i + 1) % len(colors)  # +1 because 0 is used for "All Teams"
+            team_name = result.name
+            team_hours = round(result.total_time / 3600, 2)
+            
+            team_workload['labels'].append(team_name)
+            team_workload['datasets'][0]['data'].append(team_hours)
+            team_workload['datasets'][0]['backgroundColor'].append(colors[color_index])
+            
+            # Get team members for utilization calculation
+            team_members = []
+            team = Team.query.get(result.id)
+            if team:
+                team_members = [member.id for member in team.members if member.is_active]
+            
+            # Calculate working days for this team
+            team_working_days = count_working_days(start_date, end_date) if start_date and end_date else 0
+            
+            detailed_stats.append({
+                'name': team_name,
+                'total_hours': team_hours,
+                'projects_count': result.projects_count,
+                'avg_daily_hours': round(team_hours / ((end_date - start_date).days + 1), 2) if start_date and end_date else 0,
+                # Note: Using hardcoded 8 hour workday - in future versions this should be replaced with user-specific work norms
+                'utilization': min(round((team_hours / (8 * team_working_days * max(1, len(team_members)))) * 100, 2) if start_date and end_date and team_working_days > 0 else 0, 100)
+            })
+        
+        # Process user results
+        for i, result in enumerate(user_results):
+            color_index = i % len(colors)
+            user_name = result.display_name or f"User {result.id}"
+            user_hours = round(result.total_time / 3600, 2)
+            
+            user_workload['labels'].append(user_name)
+            user_workload['datasets'][0]['data'].append(user_hours)
+            user_workload['datasets'][0]['backgroundColor'].append(colors[color_index])
+            
+            # Calculate working days for this user
+            user_working_days = count_working_days(start_date, end_date) if start_date and end_date else 0
+            
+            detailed_stats.append({
+                'name': user_name,
+                'total_hours': user_hours,
+                'projects_count': result.projects_count,
+                'avg_daily_hours': round(user_hours / ((end_date - start_date).days + 1), 2) if start_date and end_date else 0,
+                # Note: Using hardcoded 8 hour workday - in future versions this should be replaced with user-specific work norms
+                'utilization': min(round((user_hours / (8 * user_working_days)) * 100, 2) if start_date and end_date and user_working_days > 0 else 0, 100)
+            })
+        
+        # Sort detailed stats by total hours
+        detailed_stats.sort(key=lambda x: x['total_hours'], reverse=True)
+        
+        # Add date range info to the response
+        date_info = {
+            'start_date': start_date.strftime('%Y-%m-%d') if start_date else None,
+            'end_date': end_date.strftime('%Y-%m-%d') if end_date else None,
+            'days': (end_date - start_date).days + 1 if start_date and end_date else 0
+        }
+        
+        return jsonify({
+            'status': 'success',
+            'team_workload': team_workload,
+            'user_workload': user_workload,
+            'detailed_stats': detailed_stats,
+            'date_info': date_info,
+            'filters': {
+                'team_id': team_id,
+                'project_ids': project_ids,
+                'date_range': date_range
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting workload data: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 @admin_bp.route('/reports/role-distribution')
 @login_required
@@ -1754,56 +2275,6 @@ def get_leave_details(leave_id):
             'message': str(e)
         }), 500 
 
-@admin_bp.route('/portfolios/create', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def create_portfolio():
-    """Create new portfolio."""
-    form = PortfolioForm()
-    
-    if request.method == 'POST':
-        # Log request data for debugging
-        logger.debug(f"Form data: {request.form}")
-        logger.debug(f"CSRF token in form: {request.form.get('csrf_token')}")
-        logger.debug(f"CSRF token in session: {session.get('csrf_token')}")
-        
-        if form.validate_on_submit():
-            try:
-                portfolio = Portfolio(
-                    name=form.name.data,
-                    description=form.description.data,
-                    is_active=True,
-                    created_by=current_user.username
-                )
-                
-                # Add selected projects if any
-                if form.projects.data:
-                    from app.models.project import Project
-                    for project_id in form.projects.data:
-                        project = Project.query.get(project_id)
-                        if project:
-                            portfolio.projects.append(project)
-                
-                db.session.add(portfolio)
-                db.session.commit()
-                flash('Portfolio zostało utworzone.', 'success')
-                return redirect(url_for('admin.manage_portfolios'))
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                logger.error(f"Database error creating portfolio: {str(e)}")
-                flash('Błąd bazy danych podczas tworzenia portfolio.', 'error')
-        else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f'{field}: {error}', 'error')
-                    logger.error(f"Form validation error - {field}: {error}")
-    
-    # Generate new CSRF token for GET requests
-    if request.method == 'GET':
-        form.csrf_token.data = generate_csrf()
-    
-    return render_template('admin/portfolios/create.html', form=form)
-
 @admin_bp.route('/portfolios/<int:portfolio_id>/edit', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -1888,29 +2359,114 @@ def manage_portfolio_projects(portfolio_id):
 def edit_portfolio_assignments(portfolio_id):
     """Edit portfolio project assignments."""
     try:
+        current_app.logger.info(f"Editing portfolio assignments for portfolio {portfolio_id}")
         portfolio = Portfolio.query.get_or_404(portfolio_id)
+        
         if request.method == 'POST':
-            project_ids = request.form.getlist('project_ids')
-            # Clear existing assignments
-            portfolio.projects = []
-            # Add new assignments
-            for project_id in project_ids:
-                project = Project.query.get(project_id)
-                if project:
-                    portfolio.projects.append(project)
-            db.session.commit()
-            flash('Przypisania projektów zostały zaktualizowane.', 'success')
-            return redirect(url_for('admin.portfolio_assignments'))
+            current_app.logger.info(f"POST request received for portfolio {portfolio_id} assignments")
+            # Debug request information
+            current_app.logger.debug(f"Content-Type: {request.content_type}")
+            current_app.logger.debug(f"Form data keys: {list(request.form.keys())}")
             
+            # Get project IDs from different possible sources
+            project_ids = []
+            if 'project_ids[]' in request.form:
+                project_ids = request.form.getlist('project_ids[]')
+                current_app.logger.debug(f"Found project_ids[] in form: {project_ids}")
+            elif 'project_ids' in request.form:
+                project_ids = request.form.getlist('project_ids')
+                current_app.logger.debug(f"Found project_ids in form: {project_ids}")
+            
+            # Try JSON data if no form data found
+            if not project_ids and request.is_json:
+                try:
+                    data = request.get_json()
+                    if data:
+                        project_ids = data.get('project_ids', [])
+                        current_app.logger.debug(f"Project IDs from JSON: {project_ids}")
+                except Exception as e:
+                    current_app.logger.error(f"Error parsing JSON data: {str(e)}")
+            
+            current_app.logger.info(f"Project IDs to assign: {project_ids}")
+            
+            # Clear existing assignments - use SQLAlchemy relationship
+            current_app.logger.info(f"Clearing existing projects for portfolio {portfolio_id}")
+            portfolio.projects = []
+            db.session.flush()
+            
+            # Add new assignments if any projects were selected
+            added_count = 0
+            if project_ids:
+                current_app.logger.info(f"Adding {len(project_ids)} projects to portfolio")
+                
+                for project_id in project_ids:
+                    # Convert to integer if needed
+                    try:
+                        project_id_int = int(project_id)
+                        project = Project.query.get(project_id_int)
+                        
+                        if project:
+                            portfolio.projects.append(project)
+                            added_count += 1
+                            current_app.logger.debug(f"Added project {project.id} - {project.name} to portfolio")
+                        else:
+                            current_app.logger.warning(f"Project with ID {project_id_int} not found")
+                    except ValueError:
+                        current_app.logger.error(f"Invalid project ID format: {project_id}")
+                    except Exception as e:
+                        current_app.logger.error(f"Error adding project {project_id}: {str(e)}")
+            
+            try:
+                db.session.commit()
+                current_app.logger.info(f"Portfolio assignments updated successfully: {added_count} projects added")
+                
+                flash('Portfolio assignments updated successfully.', 'success')
+                
+                # Return JSON response if requested
+                if request.headers.get('Accept') == 'application/json' or request.is_json:
+                    return jsonify({
+                        'status': 'success', 
+                        'message': 'Assignments updated successfully',
+                        'project_count': added_count
+                    })
+                
+                # Otherwise redirect to portfolios page
+                return redirect(url_for('admin.portfolio_assignments'))
+                
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                error_msg = str(e)
+                current_app.logger.error(f"Database error updating portfolio assignments: {error_msg}")
+                flash('Error updating portfolio assignments.', 'error')
+                
+                if request.headers.get('Accept') == 'application/json' or request.is_json:
+                    return jsonify({'status': 'error', 'message': 'Database error occurred'}), 500
+                
+                return redirect(url_for('admin.edit_portfolio_assignments', portfolio_id=portfolio_id))
+            
+        # GET request - prepare the template data
+        current_app.logger.info(f"Preparing template data for portfolio {portfolio_id}")
         available_projects = Project.query.all()
+        current_app.logger.debug(f"Found {len(available_projects)} available projects")
+        
+        # Explicitly load portfolio projects
+        portfolio_projects = portfolio.projects
+        current_app.logger.debug(f"Portfolio has {len(portfolio_projects)} assigned projects")
+        
         return render_template('admin/portfolios/edit_assignments.html',
                              portfolio=portfolio,
-                             available_projects=available_projects)
+                             available_projects=available_projects,
+                             assigned_projects=portfolio_projects)
                              
     except Exception as e:
-        current_app.logger.error(f"Error editing portfolio assignments: {str(e)}")
-        flash('Błąd podczas edycji przypisań portfolio.', 'error')
-        return redirect(url_for('admin.portfolio_assignments')) 
+        error_msg = str(e)
+        current_app.logger.error(f"Error editing portfolio assignments: {error_msg}", exc_info=True)
+        flash('An error occurred while editing portfolio assignments.', 'error')
+        
+        if request.headers.get('Accept') == 'application/json' or request.is_json:
+            return jsonify({'status': 'error', 'message': error_msg}), 500
+        
+        return redirect(url_for('admin.portfolio_assignments'))
 
 @admin_bp.route('/jira/sync', methods=['POST'])
 @login_required
@@ -2038,3 +2594,285 @@ def test_jira_sync():
             'message': str(e),
             'traceback': traceback.format_exc()
         }), 500 
+
+# Cache dictionary with TTL management
+_analysis_cache = {}
+_cache_ttl = 600  # 10 minutes in seconds
+
+def clear_expired_cache():
+    """Clear expired cache entries based on TTL"""
+    now = time.time()
+    expired_keys = [k for k, v in _analysis_cache.items() if v['expires'] < now]
+    for key in expired_keys:
+        del _analysis_cache[key]
+
+def cached_response(ttl=_cache_ttl):
+    """Decorator to cache API responses based on request parameters"""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # Clear expired cache entries first
+            clear_expired_cache()
+            
+            # Create cache key from endpoint, function arguments and query parameters
+            key_parts = [request.path]
+            key_parts.extend([str(a) for a in args])
+            key_parts.extend([f"{k}:{v}" for k, v in kwargs.items()])
+            key_parts.extend([f"{k}:{v}" for k, v in request.args.items()])
+            
+            cache_key = hashlib.md5(json.dumps(key_parts).encode()).hexdigest()
+            
+            # Check if we have a valid cached response
+            if cache_key in _analysis_cache and _analysis_cache[cache_key]['expires'] > time.time():
+                current_app.logger.debug(f"Cache hit for {request.path}")
+                return _analysis_cache[cache_key]['data']
+            
+            # No cache hit, call the original function
+            response = f(*args, **kwargs)
+            
+            # Cache the response
+            _analysis_cache[cache_key] = {
+                'data': response,
+                'expires': time.time() + ttl
+            }
+            
+            current_app.logger.debug(f"Cache miss for {request.path}, caching for {ttl} seconds")
+            return response
+        return wrapper
+    return decorator
+
+@admin_bp.route('/portfolios/analysis/data/<portfolio_id>')
+@login_required
+@cached_response(ttl=300)  # 5 minute cache for portfolio analysis data
+def get_portfolio_analysis_data(portfolio_id):
+    """
+    Returns portfolio analysis data in JSON format
+    
+    Parameters:
+    -----------
+    portfolio_id : str
+        The ID of the portfolio to analyze
+    
+    Query Parameters:
+    ----------------
+    start_date : str
+        Start date for analysis (YYYY-MM-DD)
+    end_date : str
+        End date for analysis (YYYY-MM-DD)
+    
+    Returns:
+    --------
+    JSON response with portfolio analysis data or error
+    """
+    try:
+        # Get parameters from request
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Validate required parameters
+        if not portfolio_id:
+            current_app.logger.error("Portfolio ID not provided")
+            return jsonify({
+                'status': 'error',
+                'message': 'Portfolio ID is required'
+            }), 400
+        
+        # Sanitize portfolio_id against XSS
+        portfolio_id = bleach.clean(portfolio_id, strip=True)
+        
+        # Validate date parameters
+        try:
+            if start_date:
+                # Validate and parse start_date
+                start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            else:
+                # Default: 30 days ago
+                start_date_obj = (datetime.now() - timedelta(days=30)).date()
+                start_date = start_date_obj.strftime('%Y-%m-%d')
+                
+            if end_date:
+                # Validate and parse end_date
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            else:
+                # Default: today
+                end_date_obj = datetime.now().date()
+                end_date = end_date_obj.strftime('%Y-%m-%d')
+                
+            # Check if date range is valid
+            if end_date_obj < start_date_obj:
+                current_app.logger.warning(f"End date {end_date} is before start date {start_date}")
+                return jsonify({
+                    'status': 'error',
+                    'message': 'End date cannot be before start date'
+                }), 400
+                
+            # Limit date range to 1 year to prevent excessive queries
+            if (end_date_obj - start_date_obj).days > 365:
+                current_app.logger.warning(f"Date range too large: {start_date} to {end_date}")
+                return jsonify({
+                    'status': 'error',
+                    'message': 'Date range cannot exceed 1 year'
+                }), 400
+                
+        except ValueError as e:
+            current_app.logger.error(f"Invalid date format: {str(e)}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Invalid date format. Use YYYY-MM-DD.'
+            }), 400
+        
+        # Log analysis request
+        current_app.logger.info(f"Portfolio analysis requested for ID: {portfolio_id}, "
+                        f"date range: {start_date} to {end_date}")
+        
+        # Begin database session
+        db_session = db.session
+        
+        # Check if portfolio exists and user has access
+        portfolio = Portfolio.query.filter_by(id=portfolio_id).first()
+        if not portfolio:
+            current_app.logger.warning(f"Portfolio not found: {portfolio_id}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Portfolio not found'
+            }), 404
+            
+        # Check user permission
+        if not current_user.is_admin and portfolio.user_id != current_user.id:
+            current_app.logger.warning(f"User {current_user.id} attempted to access portfolio {portfolio_id} without permission")
+            return jsonify({
+                'status': 'error',
+                'message': 'You do not have permission to view this portfolio'
+            }), 403
+        
+        # Optimize query with joins and filtering
+        try:
+            # Base query for portfolio projects
+            projects_query = db_session.query(
+                Project.id, 
+                Project.name
+            ).join(
+                portfolio_projects,
+                Project.id == portfolio_projects.c.project_id
+            ).filter(
+                portfolio_projects.c.portfolio_id == portfolio_id
+            ).all()
+            
+            # Convert to list of project IDs
+            project_ids = [p.id for p in projects_query]
+            project_names = {p.id: p.name for p in projects_query}
+            
+            if not project_ids:
+                current_app.logger.info(f"No projects found for portfolio {portfolio_id}")
+                return jsonify({
+                    'status': 'success',
+                    'data': {
+                        'total_hours': 0,
+                        'total_users': 0,
+                        'projects_count': 0,
+                        'projects_data': []
+                    }
+                })
+            
+            # Get time entries efficiently with one query
+            time_entries = db_session.query(
+                Worklog.project_id,
+                Worklog.user_id,
+                Worklog.time_spent_seconds
+            ).filter(
+                Worklog.project_id.in_(project_ids),
+                Worklog.work_date >= start_date_obj,
+                Worklog.work_date <= end_date_obj
+            ).all()
+            
+            # Process data
+            projects_data = {}
+            users_set = set()
+            total_hours = 0
+            
+            # Process time entries
+            for entry in time_entries:
+                project_id = entry.project_id
+                user_id = entry.user_id
+                # Convert seconds to hours
+                hours = float(entry.time_spent_seconds or 0) / 3600
+                
+                # Add to users set
+                users_set.add(user_id)
+                
+                # Add to total hours
+                total_hours += hours
+                
+                # Add to project data
+                if project_id not in projects_data:
+                    projects_data[project_id] = {
+                        'id': project_id,
+                        'name': project_names.get(project_id, 'Unknown'),
+                        'hours': 0,
+                        'users': set()
+                    }
+                    
+                projects_data[project_id]['hours'] += hours
+                projects_data[project_id]['users'].add(user_id)
+            
+            # Format the response data
+            formatted_projects = []
+            for project_id, data in projects_data.items():
+                formatted_projects.append({
+                    'id': project_id,
+                    'name': data['name'],
+                    'hours': round(data['hours'], 2),
+                    'users_count': len(data['users'])
+                })
+                
+            # Sort projects by hours (descending)
+            formatted_projects.sort(key=lambda x: x['hours'], reverse=True)
+            
+            # Prepare final response
+            response_data = {
+                'total_hours': round(total_hours, 2),
+                'total_users': len(users_set),
+                'projects_count': len(projects_data),
+                'projects_data': formatted_projects
+            }
+            
+            return jsonify({
+                'status': 'success',
+                'data': response_data
+            })
+            
+        except SQLAlchemyError as e:
+            # Handle database errors
+            db_session.rollback()
+            error_msg = str(e)
+            current_app.logger.error(f"Database error in portfolio analysis: {error_msg}")
+            
+            # Return sanitized error message (don't expose SQL details)
+            return jsonify({
+                'status': 'error',
+                'message': 'Database error while retrieving portfolio data'
+            }), 500
+            
+    except HTTPException as e:
+        # Handle HTTP exceptions
+        current_app.logger.error(f"HTTP error in portfolio analysis: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), e.code
+        
+    except Exception as e:
+        # Handle unexpected errors
+        current_app.logger.error(f"Unexpected error in portfolio analysis: {str(e)}")
+        current_app.logger.error(traceback.format_exc())
+        
+        # Return generic error in production
+        if current_app.config.get('DEBUG', False):
+            error_details = str(e)
+        else:
+            error_details = 'An unexpected error occurred'
+            
+        return jsonify({
+            'status': 'error',
+            'message': error_details
+        }), 500

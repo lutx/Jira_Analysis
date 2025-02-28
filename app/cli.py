@@ -21,6 +21,16 @@ def register_commands(app):
     app.cli.add_command(init_jira_command)
     app.cli.add_command(init_db_command)
     app.cli.add_command(fix_db_command)
+    app.cli.add_command(migrate_roles_command)
+    app.cli.add_command(migrate_all_command)
+    
+    # Register leave management commands
+    from app.commands.leave_reminders import send_leave_reminders_command
+    app.cli.add_command(send_leave_reminders_command)
+    
+    # Register report commands
+    from app.commands.run_scheduled_reports import run_scheduled_reports_command
+    app.cli.add_command(run_scheduled_reports_command)
 
 def init_app(app):
     register_commands(app)
@@ -182,4 +192,50 @@ def fix_db_command():
         raise
     finally:
         if conn:
-            conn.close() 
+            conn.close()
+
+@click.command('migrate-roles')
+@with_appcontext
+def migrate_roles_command():
+    """Migrate roles table to add new columns and update permissions."""
+    try:
+        from migrations.add_role_enhancements import upgrade
+        if upgrade():
+            click.echo('Successfully migrated roles table')
+        else:
+            click.echo('Error migrating roles table')
+    except Exception as e:
+        click.echo(f'Error: {str(e)}')
+
+@click.command('migrate-all')
+@with_appcontext
+def migrate_all_command():
+    """Run all pending migrations."""
+    try:
+        # Run role enhancements migration
+        from migrations.add_role_enhancements import upgrade as upgrade_roles
+        if upgrade_roles():
+            click.echo('Successfully migrated roles table')
+        else:
+            click.echo('Error migrating roles table')
+            return
+
+        # Run holidays migration
+        from migrations.add_holidays import upgrade as upgrade_holidays
+        if upgrade_holidays():
+            click.echo('Successfully migrated holidays table')
+        else:
+            click.echo('Error migrating holidays table')
+            return
+
+        # Run leave balances migration
+        from migrations.add_leave_balances import upgrade as upgrade_leave_balances
+        if upgrade_leave_balances():
+            click.echo('Successfully migrated leave balances table')
+        else:
+            click.echo('Error migrating leave balances table')
+            return
+
+        click.echo('All migrations completed successfully')
+    except Exception as e:
+        click.echo(f'Error running migrations: {str(e)}') 

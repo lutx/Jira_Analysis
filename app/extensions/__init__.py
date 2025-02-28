@@ -6,6 +6,7 @@ from flask_session import Session
 from flask_caching import Cache
 from flask_wtf.csrf import CSRFProtect
 from celery import Celery
+from flask_mail import Mail
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -16,6 +17,7 @@ session = Session()
 cache = Cache()
 csrf = CSRFProtect()
 celery = Celery('app')
+mail = Mail()
 
 def init_security_headers(app):
     """Initialize security headers."""
@@ -47,6 +49,7 @@ def init_extensions(app):
     session.init_app(app)
     cache.init_app(app)
     csrf.init_app(app)
+    mail.init_app(app)
     init_celery(app)
     
     return app 

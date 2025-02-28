@@ -4,7 +4,7 @@ from pathlib import Path
 from app.services.jira_service import get_jira_service, test_connection, save_jira_config
 from app.services.dashboard_service import get_dashboard_stats
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import os
 from app.services.admin_service import (
     get_users_count, get_active_users_count, get_total_worklogs, 
@@ -100,100 +100,22 @@ def project(project_key):
         flash('Wystąpił błąd podczas ładowania szczegółów projektu', 'error')
         return redirect(url_for('views.projects'))
 
-@views_bp.route('/worklog')
+@views_bp.route('/worklogs')
 @login_required
 def worklog():
-    """Widok worklogów z lokalnej bazy danych."""
     try:
-        # Pobierz parametry filtrowania
-        start_date = request.args.get('start_date', None)
-        end_date = request.args.get('end_date', None)
-        project_key = request.args.get('project', None)
-        user_id = request.args.get('user_id', None)
-
-        # Jeśli nie podano dat, ustaw ostatni tydzień jako domyślny zakres
-        if not start_date:
-            end_date = datetime.now()
-            start_date = (end_date - timedelta(days=7)).strftime('%Y-%m-%d')
-            end_date = end_date.strftime('%Y-%m-%d')
-
-        # Podstawowe zapytanie
-        query = Worklog.query\
-            .join(Worklog.user)\
-            .join(Worklog.project)\
-            .join(Worklog.issue)
-
-        # Dodaj filtry
-        if start_date:
-            query = query.filter(Worklog.work_date >= datetime.strptime(start_date, '%Y-%m-%d'))
-        if end_date:
-            query = query.filter(Worklog.work_date <= datetime.strptime(end_date, '%Y-%m-%d'))
-        if project_key:
-            query = query.filter(Project.jira_key == project_key)
-        if user_id:
-            query = query.filter(Worklog.user_id == user_id)
-        else:
-            # Jeśli nie jest adminem, pokaż tylko jego worklogi
-            if not current_user.is_admin:
-                query = query.filter(Worklog.user_id == current_user.id)
-
-        # Sortowanie
-        query = query.order_by(Worklog.work_date.desc())
-
-        # Pobierz worklogi
-        worklogs = query.all()
-        logger.info(f"Found {len(worklogs)} worklogs")
-
-        # Przygotuj dane do widoku
-        worklog_data = []
-        for worklog in worklogs:
-            worklog_data.append({
-                'id': worklog.id,
-                'user': {
-                    'id': worklog.user.id,
-                    'name': worklog.user.display_name or worklog.user.username,
-                    'email': worklog.user.email
-                },
-                'project': {
-                    'key': worklog.project.jira_key,
-                    'name': worklog.project.name
-                },
-                'issue': {
-                    'key': worklog.issue.jira_key,
-                    'summary': worklog.issue.summary
-                },
-                'time_spent_seconds': worklog.time_spent_seconds,
-                'time_spent_hours': round(worklog.time_spent_seconds / 3600, 2),
-                'work_date': worklog.work_date.strftime('%Y-%m-%d %H:%M'),
-                'created': worklog.created_at.strftime('%Y-%m-%d %H:%M'),
-                'updated': worklog.updated_at.strftime('%Y-%m-%d %H:%M') if worklog.updated_at else None
-            })
-
-        # Pobierz projekty do filtra
-        projects = Project.query.filter_by(is_active=True).order_by(Project.name).all()
-        project_choices = [{'key': p.jira_key, 'name': p.name} for p in projects]
-
-        # Pobierz użytkowników do filtra (tylko dla adminów)
-        users = []
-        if current_user.is_admin:
-            users = User.query.filter_by(is_active=True).order_by(User.display_name).all()
-            users = [{'id': u.id, 'name': u.display_name or u.username} for u in users]
-
-        return render_template('worklog/index.html',
-                            worklogs=worklog_data,
-                            projects=project_choices,
-                            users=users,
-                            filters={
-                                'start_date': start_date,
-                                'end_date': end_date,
-                                'project': project_key,
-                                'user_id': user_id
-                            })
-
+        all_users = User.query.filter_by(is_active=True).all()
+        all_projects = Project.query.filter_by(is_active=True).all()
+        today = date.today()
+        
+        return render_template('admin/worklogs/index.html',
+                             all_users=all_users,
+                             all_projects=all_projects,
+                             today=today)
     except Exception as e:
-        logger.error(f"Error in worklog view: {str(e)}")
-        flash('Error loading worklogs', 'error')
-        return redirect(url_for('views.index'))
+        current_app.logger.error(f'Error loading worklog page: {str(e)}')
+        flash('Error loading worklog page', 'error')
+        return redirect(url_for('main.index'))
 
 @views_bp.route('/reports')
 @login_required
@@ -1809,4 +1731,45 @@ def manage_roles():
         return jsonify({
             'status': 'error',
             'message': str(e)
-        }), 500 
+        }), 500
+
+@views_bp.route('/worklogs/add', methods=['POST'])
+@login_required
+def add_worklog():
+    try:
+        # Get form data
+        date = request.form.get('date')
+        hours = float(request.form.get('hours'))
+        user_id = int(request.form.get('user_id'))
+        project_id = int(request.form.get('project_id'))
+        description = request.form.get('description')
+
+        # Validate input
+        if not all([date, hours, user_id, project_id, description]):
+            flash('All fields are required', 'error')
+            return redirect(url_for('views.worklog'))
+
+        if hours <= 0 or hours > 24:
+            flash('Hours must be between 0 and 24', 'error')
+            return redirect(url_for('views.worklog'))
+
+        # Create worklog
+        worklog = Worklog(
+            date=datetime.strptime(date, '%Y-%m-%d').date(),
+            hours=hours,
+            user_id=user_id,
+            project_id=project_id,
+            description=description
+        )
+
+        db.session.add(worklog)
+        db.session.commit()
+
+        flash('Worklog added successfully', 'success')
+        return redirect(url_for('views.worklog'))
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Error adding worklog: {str(e)}')
+        flash('Error adding worklog', 'error')
+        return redirect(url_for('views.worklog')) 

@@ -1,11 +1,14 @@
-from flask import request, jsonify
+from flask import Blueprint, request, jsonify
 from flask_login import login_required
 from sqlalchemy import or_
 from app.models.user import User
 from app.services.jira_service import sync_jira_users
 from app.utils.logger import logger
 
-@bp.route('/api/users/search')
+# Create blueprint
+users_bp = Blueprint('users', __name__)
+
+@users_bp.route('/api/users/search')
 @login_required
 def search_users():
     """Search users API endpoint."""
@@ -36,7 +39,7 @@ def search_users():
             'message': str(e)
         }), 500
 
-@bp.route('/api/users/import-from-jira', methods=['POST'])
+@users_bp.route('/api/users/import-from-jira', methods=['POST'])
 @login_required
 def import_users_from_jira():
     """Import users from JIRA."""

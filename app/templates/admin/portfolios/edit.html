@@ -1,21 +1,29 @@
 {% extends "admin/base_admin.html" %}
 
-{% block title %}Edytuj Portfolio{% endblock %}
+{% block title %}Edit Portfolio{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
+{% block admin_content %}
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Edit Portfolio</h1>
+                <a href="{{ url_for('admin.manage_portfolios') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Portfolios
+                </a>
+            </div>
+            
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Edytuj portfolio</h5>
+                    <h5 class="mb-0">Edit Portfolio Details</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
-                        {{ form.csrf_token }}
+                    <form method="POST" id="editPortfolioForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-3">
                             <label for="name" class="form-label">Nazwa</label>
-                            {{ form.name(class="form-control") }}
+                            <input type="text" class="form-control" id="name" name="name" required 
+                                   value="{{ form.name.data or portfolio.name }}">
                             {% if form.name.errors %}
                                 {% for error in form.name.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
@@ -24,16 +32,34 @@
                         </div>
                         <div class="mb-3">
                             <label for="description" class="form-label">Opis</label>
-                            {{ form.description(class="form-control", rows=3) }}
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ form.description.data or portfolio.description }}</textarea>
                             {% if form.description.errors %}
                                 {% for error in form.description.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                 {% endfor %}
                             {% endif %}
                         </div>
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('admin.manage_portfolios') }}" class="btn btn-secondary">Anuluj</a>
-                            <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                        
+                        <div class="mb-3">
+                            <label for="projects" class="form-label">Projekty</label>
+                            <select class="form-select" id="projects" name="projects" multiple size="8">
+                                {% for choice in form.projects.choices %}
+                                <option value="{{ choice[0] }}" {% if choice[0] in form.projects.data %}selected{% endif %}>
+                                    {{ choice[1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) to select multiple projects.</small>
+                            {% if form.projects.errors %}
+                                {% for error in form.projects.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('admin.manage_portfolios') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -41,4 +67,35 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const editForm = document.getElementById('editPortfolioForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(event) {
+            let isValid = true;
+            
+            // Validate name field
+            const nameField = document.getElementById('name');
+            if (!nameField.value.trim()) {
+                nameField.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                nameField.classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+            } else {
+                // Add success handler
+                console.log('Edit form is valid, submitting...');
+            }
+        });
+    }
+});
+</script>
 {% endblock %} 

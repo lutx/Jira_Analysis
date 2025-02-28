@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .details {
+            background-color: #fff;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .balance {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin: 10px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Leave Balance Reminder</h2>
+        </div>
+        <div class="details">
+            <p>Hello,</p>
+            <p>This is a friendly reminder about your remaining leave balance for the year {{ balance.year }}:</p>
+            
+            <div class="balance">
+                {{ balance.remaining_days }} days remaining
+            </div>
+            
+            <h3>Balance Details:</h3>
+            <ul>
+                <li><strong>Total Allowance:</strong> {{ balance.total_days }} days</li>
+                <li><strong>Used Days:</strong> {{ balance.used_days }} days</li>
+                <li><strong>Pending Requests:</strong> {{ balance.pending_days }} days</li>
+                <li><strong>Carried Over:</strong> {{ balance.carried_over }} days</li>
+            </ul>
+            
+            {% if balance.remaining_days > 10 %}
+            <p>You have a significant number of leave days remaining. Consider planning your time off to ensure a good work-life balance!</p>
+            {% endif %}
+            
+            <p>Remember that you can carry over a maximum of 5 days to the next year.</p>
+            
+            <a href="{{ url_for('leaves.request_leave', _external=True) }}" class="button">Request Leave</a>
+        </div>
+    </div>
+</body>
+</html> 

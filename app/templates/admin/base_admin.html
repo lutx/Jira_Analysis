@@ -1,37 +1,20 @@
 {% extends "base.html" %}
 
-{% block head %}
-    {{ super() }}
-    <!-- CSS -->
-    <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/select2.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/datepicker.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/toastr.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/datatables.min.css') }}" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-{% endblock %}
+{% block title %}Admin Panel{% endblock %}
 
-{% block scripts %}
-    {{ super() }}
-    <!-- Core JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
-    
-    <!-- Admin Core JS -->
-    <script src="{{ url_for('static', filename='js/admin/sidebar.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/admin/tables/base_table.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/admin/modals/base_form.js') }}"></script>
+{% block custom_css %}
+    <!-- Admin specific CSS, overriding the custom_css block rather than adding to head -->
+    <link href="{{ url_for('static', filename='css/admin.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/admin_fix.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="wrapper">
+<div class="admin-wrapper">
+    <!-- Mobile Toggle Button -->
+    <button id="sidebarToggle" class="btn btn-link d-md-none position-fixed" style="top: 10px; left: 10px; z-index: 1050; color: #fff;">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <!-- Sidebar -->
     <nav class="sidebar">
         <div class="sidebar-header">
@@ -211,31 +194,20 @@
 
     <!-- Main Content -->
     <div class="content-wrapper">
-        <!-- Header -->
-        <header class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>{{ page_title }}</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        {% block breadcrumb %}{% endblock %}
-                    </div>
-                </div>
-            </div>
-        </header>
-
         <!-- Main content -->
         <section class="content">
             <div class="container-fluid">
+                <!-- Admin Flash Messages -->
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ category }} alert-dismissible fade show">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
+                        <div class="admin-notifications mb-4">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category if category not in ['message', 'default'] else 'info' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% endif %}
                 {% endwith %}
 
@@ -247,5 +219,37 @@
 
 <!-- Modals -->
 {% include 'admin/includes/modals.html' %}
+{% endblock %}
 
+{% block scripts %}
+<!-- Override the scripts block completely rather than adding to it -->
+<script src="{{ url_for('static', filename='js/admin/sidebar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin/tables/base_table.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin/modals/base_form.js') }}"></script>
+
+<!-- Auto-dismiss flash messages after delay -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all alert elements
+    const alerts = document.querySelectorAll('.alert');
+    
+    // Set timeout to auto-dismiss alerts after 5 seconds
+    alerts.forEach(function(alert) {
+        setTimeout(function() {
+            // Create a Bootstrap dismiss instance and hide the alert
+            const closeBtn = alert.querySelector('.btn-close');
+            if (closeBtn) {
+                closeBtn.click();
+            } else {
+                // Fallback if button isn't found
+                alert.classList.remove('show');
+                alert.classList.add('hide');
+                setTimeout(function() {
+                    alert.remove();
+                }, 300);
+            }
+        }, 5000); // 5 second delay
+    });
+});
+</script>
 {% endblock %} 

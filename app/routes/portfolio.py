@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, g, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, g, jsonify, current_app
 from app.utils.decorators import auth_required, admin_required
 from app.services.portfolio_service import (
     get_all_portfolios, get_portfolio, create_portfolio, update_portfolio,
@@ -6,11 +6,16 @@ from app.services.portfolio_service import (
     get_portfolio_stats, assign_user_to_project
 )
 from flask_wtf import FlaskForm
+from flask_wtf.csrf import generate_csrf
 from flask_login import login_required, current_user
 from app.models import Portfolio, Project
 from app.extensions import db
 from app.forms.portfolio import PortfolioForm
 import logging
+from app.utils.auth import requires_auth
+from datetime import datetime
+from typing import Optional
+from sqlalchemy.exc import SQLAlchemyError
 
 portfolio_bp = Blueprint('portfolio', __name__, url_prefix='/portfolio')
 logger = logging.getLogger(__name__)
@@ -45,6 +50,39 @@ def overview():
 def create():
     """Tworzenie nowego portfolio."""
     form = PortfolioForm()
+    
+    if request.method == 'POST':
+        # Log request data for debugging
+        logger.debug(f"Form data: {request.form}")
+        logger.debug(f"CSRF token in form: {request.form.get('csrf_token')}")
+        
+        if form.validate_on_submit():
+            try:
+                portfolio = Portfolio(
+                    name=form.name.data,
+                    description=form.description.data,
+                    is_active=True,
+                    created_by=current_user.username
+                )
+                
+                db.session.add(portfolio)
+                db.session.commit()
+                flash('Portfolio zostało utworzone.', 'success')
+                return redirect(url_for('portfolio.list'))
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Error creating portfolio: {str(e)}")
+                flash('Wystąpił błąd podczas tworzenia portfolio.', 'danger')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f'{field}: {error}', 'error')
+                    logger.error(f"Form validation error - {field}: {error}")
+    
+    # Generate new CSRF token for GET requests
+    if request.method == 'GET':
+        form.csrf_token.data = generate_csrf()
+    
     if form.validate_on_submit():
         portfolio = Portfolio(
             name=form.name.data,
@@ -136,6 +174,147 @@ def get_stats():
     month = request.args.get('month')
     stats = get_portfolio_stats(portfolio_id, month)
     return jsonify(stats)
+
+@portfolio_bp.route('/api/portfolios', methods=['GET'])
+@requires_auth
+def get_portfolios():
+    """Get all portfolios with optional analytics."""
+    try:
+        include_analytics = request.args.get('include_analytics', 'false').lower() == 'true'
+        portfolios = Portfolio.query.all()
+        return jsonify({
+            'status': 'success',
+            'data': [p.to_dict() if include_analytics else {
+                'id': p.id,
+                'name': p.name,
+                'description': p.description,
+                'projects_count': len(p.projects)
+            } for p in portfolios]
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting portfolios: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@portfolio_bp.route('/api/portfolios/<int:portfolio_id>/analytics', methods=['GET'])
+@requires_auth
+def get_portfolio_analytics(portfolio_id: int):
+    """Get detailed analytics for a specific portfolio."""
+    try:
+        portfolio = Portfolio.query.get_or_404(portfolio_id)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Convert date strings to datetime objects if provided
+        start_date = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+        end_date = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+        
+        analytics = {
+            'role_distribution': portfolio.get_role_distribution(start_date, end_date),
+            'hours_analysis': portfolio.get_planned_vs_actual_hours(start_date, end_date),
+            'project_statistics': portfolio.get_project_statistics()
+        }
+        
+        return jsonify({
+            'status': 'success',
+            'data': analytics
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting portfolio analytics: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@portfolio_bp.route('/api/portfolios/<int:portfolio_id>/projects', methods=['GET'])
+@requires_auth
+def get_portfolio_projects(portfolio_id: int):
+    """Get all projects in a portfolio with their analytics."""
+    try:
+        portfolio = Portfolio.query.get_or_404(portfolio_id)
+        include_analytics = request.args.get('include_analytics', 'false').lower() == 'true'
+        
+        projects_data = []
+        for project in portfolio.projects:
+            project_data = project.to_dict()
+            if include_analytics:
+                project_data.update({
+                    'role_distribution': project.get_role_distribution(),
+                    'hours_analysis': project.get_planned_vs_actual_hours()
+                })
+            projects_data.append(project_data)
+            
+        return jsonify({
+            'status': 'success',
+            'data': projects_data
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting portfolio projects: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@portfolio_bp.route('/api/portfolios/<int:portfolio_id>/shadow-work', methods=['GET'])
+@requires_auth
+def get_portfolio_shadow_work(portfolio_id: int):
+    """Get analysis of work logged outside assigned projects in the portfolio."""
+    try:
+        portfolio = Portfolio.query.get_or_404(portfolio_id)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Convert date strings to datetime objects if provided
+        start_date = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+        end_date = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+        
+        from app.models.worklog import Worklog
+        from app.models.project_assignment import ProjectAssignment
+        
+        # Get all worklogs for unassigned projects
+        shadow_work_query = db.session.query(
+            Worklog.user_id,
+            Worklog.project_id,
+            db.func.sum(Worklog.hours_spent).label('hours')
+        ).outerjoin(
+            ProjectAssignment,
+            db.and_(
+                ProjectAssignment.user_id == Worklog.user_id,
+                ProjectAssignment.project_id == Worklog.project_id
+            )
+        ).filter(
+            ProjectAssignment.id.is_(None),
+            Worklog.project_id.in_([p.id for p in portfolio.projects])
+        )
+        
+        if start_date:
+            shadow_work_query = shadow_work_query.filter(Worklog.date >= start_date)
+        if end_date:
+            shadow_work_query = shadow_work_query.filter(Worklog.date <= end_date)
+            
+        shadow_work = shadow_work_query.group_by(
+            Worklog.user_id,
+            Worklog.project_id
+        ).all()
+        
+        # Get user and project details
+        from app.models.user import User
+        from app.models.project import Project
+        
+        shadow_work_analysis = []
+        for user_id, project_id, hours in shadow_work:
+            user = User.query.get(user_id)
+            project = Project.query.get(project_id)
+            if user and project:
+                shadow_work_analysis.append({
+                    'user': user.to_dict(),
+                    'project': project.to_dict(),
+                    'hours': float(hours)
+                })
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'shadow_work': shadow_work_analysis,
+                'total_hours': sum(sw['hours'] for sw in shadow_work_analysis)
+            }
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting portfolio shadow work: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @portfolio_bp.errorhandler(Exception)
 def handle_error(error):

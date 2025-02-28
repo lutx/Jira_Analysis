@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .details {
+            background-color: #fff;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: #fff;
+            font-weight: bold;
+        }
+        .status.approved {
+            background-color: #28a745;
+        }
+        .status.rejected {
+            background-color: #dc3545;
+        }
+        .status.pending {
+            background-color: #ffc107;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Leave Request Update</h2>
+        </div>
+        <div class="details">
+            <p>Your leave request has been <span class="status {{ leave.status }}">{{ leave.status }}</span></p>
+            <h3>Request Details:</h3>
+            <ul>
+                <li><strong>Type:</strong> {{ leave.leave_type }}</li>
+                <li><strong>Start Date:</strong> {{ leave.start_date }}</li>
+                <li><strong>End Date:</strong> {{ leave.end_date }}</li>
+                <li><strong>Duration:</strong> {{ leave.duration }} day(s)</li>
+                {% if leave.description %}
+                <li><strong>Description:</strong> {{ leave.description }}</li>
+                {% endif %}
+            </ul>
+            {% if leave.status == 'approved' %}
+            <p>Your leave has been approved. Enjoy your time off!</p>
+            {% elif leave.status == 'rejected' %}
+            <p>Your leave request has been rejected. Please contact your supervisor for more information.</p>
+            {% if leave.rejection_reason %}
+            <p><strong>Reason:</strong> {{ leave.rejection_reason }}</p>
+            {% endif %}
+            {% endif %}
+            <p>You can view your leave requests and balances on the <a href="{{ url_for('leaves.my_leaves', _external=True) }}">Leave Management Portal</a>.</p>
+        </div>
+    </div>
+</body>
+</html> 

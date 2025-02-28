@@ -18,9 +18,14 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1>Worklog Management</h1>
-                <button class="btn btn-primary" id="syncWorklogs">
-                    <i class="fas fa-sync"></i> Sync Worklogs
-                </button>
+                <div>
+                    <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addWorklogModal">
+                        <i class="fas fa-plus"></i> Add Time
+                    </button>
+                    <button class="btn btn-primary" id="syncWorklogs">
+                        <i class="fas fa-sync"></i> Sync Worklogs
+                    </button>
+                </div>
             </div>
 
             <!-- Filters -->
@@ -190,6 +195,59 @@
         </div>
     </div>
 </div>
+
+<!-- Add Worklog Modal -->
+<div class="modal fade" id="addWorklogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Time Entry</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addWorklogForm" method="POST" action="{{ url_for('views.add_worklog') }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" name="date" required 
+                               value="{{ today.strftime('%Y-%m-%d') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Hours</label>
+                        <input type="number" class="form-control" name="hours" required 
+                               min="0.5" max="24" step="0.5">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">User</label>
+                        <select class="form-select select2" name="user_id" required>
+                            <option value="">Select User</option>
+                            {% for user in all_users %}
+                            <option value="{{ user.id }}">{{ user.display_name or user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Project</label>
+                        <select class="form-select select2" name="project_id" required>
+                            <option value="">Select Project</option>
+                            {% for project in all_projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -209,6 +267,13 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Select2 for all select2 elements
+    $('.select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        dropdownParent: $('#addWorklogModal')
+    });
+
     // Initialize DataTable with error handling
     let worklogsTable;
     try {

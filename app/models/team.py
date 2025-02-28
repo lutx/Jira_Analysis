@@ -21,7 +21,13 @@ team_projects = db.Table('team_projects',
 class Team(db.Model):
     """Model for teams."""
     __tablename__ = 'teams'
-    __table_args__ = {'extend_existing': True}
+    __table_args__ = (
+        db.Index('idx_team_name', 'name'),
+        db.Index('idx_team_leader', 'leader_id'),
+        db.Index('idx_team_portfolio', 'portfolio_id'),
+        db.Index('idx_team_active', 'is_active'),
+        {'extend_existing': True}
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -30,17 +36,11 @@ class Team(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    try:
-        portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolios.id'), nullable=True)  # Portfolio
-        portfolio = db.relationship('Portfolio', backref='teams')
-    except OperationalError:
-        logger.warning("portfolio_id column not found in teams table")
-        portfolio_id = None
-        portfolio = None
+    portfolio_id = db.Column(db.Integer, db.ForeignKey('portfolios.id'), nullable=True)  # Portfolio
     
     # Relacje
     leader = db.relationship('app.models.user.User', foreign_keys=[leader_id], backref='led_teams')
+    portfolio = db.relationship('Portfolio', backref='teams')
     team_members = db.relationship(
         'app.models.team_membership.TeamMembership',
         back_populates='team',
@@ -49,8 +49,8 @@ class Team(db.Model):
     assigned_projects = db.relationship(
         'Project',
         secondary='team_projects',
-        back_populates='assigned_teams',
-        lazy='dynamic'
+        back_populates='teams',
+        lazy='select'
     )
 
     def __repr__(self):
@@ -73,9 +73,24 @@ class Team(db.Model):
             'name': self.name,
             'description': self.description,
             'leader_id': self.leader_id,
+            'leader_name': self.leader.display_name if self.leader else None,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'members': [
+                {
+                    'id': member.id,
+                    'username': member.username,
+                    'display_name': member.display_name
+                } for member in self.members
+            ],
+            'projects': [
+                {
+                    'id': project.id,
+                    'name': project.name,
+                    'jira_key': project.jira_key if hasattr(project, 'jira_key') else None
+                } for project in self.assigned_projects
+            ],
             'members_count': len(self.team_members),
             'projects_count': self.assigned_projects.count(),
             **portfolio_data
@@ -103,23 +118,37 @@ class Team(db.Model):
         settings = self.get_settings()
         return date.isoweekday() in settings['work_days']
 
-    @staticmethod
-    def get_all(include_inactive: bool = False) -> List['Team']:
-        """Pobiera wszystkie zespoły."""
-        if include_inactive:
-            return Team.query.order_by(Team.name).all()
-        return Team.query.filter_by(is_active=True).order_by(Team.name).all()
+    @classmethod
+    def get_all(cls, include_inactive=False):
+        """Get all teams."""
+        try:
+            query = cls.query
+            if not include_inactive:
+                query = query.filter_by(is_active=True)
+            return query.order_by(cls.name).all()
+        except Exception as e:
+            logger.error(f"Error getting teams: {str(e)}")
+            return []
 
-    @staticmethod
-    def get_by_id(team_id: int) -> Optional['Team']:
-        """Pobiera zespół po ID."""
-        return Team.query.get(team_id)
+    @classmethod
+    def get_by_id(cls, team_id):
+        """Get team by ID."""
+        try:
+            return cls.query.get(team_id)
+        except Exception as e:
+            logger.error(f"Error getting team by ID {team_id}: {str(e)}")
+            return None
 
-    def save(self) -> 'Team':
-        """Zapisuje lub aktualizuje zespół."""
-        db.session.add(self)
-        db.session.commit()
-        return self
+    def save(self):
+        """Save or update team."""
+        try:
+            db.session.add(self)
+            db.session.commit()
+            return self
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error saving team: {str(e)}")
+            return None
 
     @property
     def members(self):
@@ -129,6 +158,10 @@ class Team(db.Model):
     def add_member(self, user, role='member'):
         """Add a user to the team."""
         try:
+            if not user:
+                logger.error("Cannot add None as team member")
+                return None
+
             # Check if user is already a member
             existing_membership = next(
                 (m for m in self.team_members if m.user_id == user.id),
@@ -137,7 +170,11 @@ class Team(db.Model):
             
             if existing_membership:
                 logger.warning(f"User {user.username} is already a member of team {self.name}")
-                return None
+                return existing_membership
+            
+            # If user is team leader, set role to 'leader'
+            if user.id == self.leader_id:
+                role = 'leader'
             
             # Create new membership
             from app.models.team_membership import TeamMembership

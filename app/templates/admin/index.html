@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="page-header d-flex justify-content-between align-items-center mb-4">
                 <h1>Admin Dashboard</h1>
             </div>
         </div>
@@ -15,70 +15,62 @@
     <div class="row">
         <!-- Statistics -->
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-primary text-white h-100">
+            <div class="card card-dashboard bg-primary text-white">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-uppercase mb-1">Users</div>
-                            <div class="h3 mb-0">{{ stats.users_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users fa-2x"></i>
-                        </div>
+                    <div class="stat-info">
+                        <div class="text-uppercase mb-1">Users</div>
+                        <div class="stat-value">{{ stats.users_count }}</div>
+                    </div>
+                    <div class="icon-container">
+                        <i class="fas fa-users"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-success text-white h-100">
+            <div class="card card-dashboard bg-success text-white">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-uppercase mb-1">Teams</div>
-                            <div class="h3 mb-0">{{ stats.teams_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-users-cog fa-2x"></i>
-                        </div>
+                    <div class="stat-info">
+                        <div class="text-uppercase mb-1">Teams</div>
+                        <div class="stat-value">{{ stats.teams_count }}</div>
+                    </div>
+                    <div class="icon-container">
+                        <i class="fas fa-users-cog"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-info text-white h-100">
+            <div class="card card-dashboard bg-info text-white">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-uppercase mb-1">Projects</div>
-                            <div class="h3 mb-0">{{ stats.projects_count }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-project-diagram fa-2x"></i>
-                        </div>
+                    <div class="stat-info">
+                        <div class="text-uppercase mb-1">Projects</div>
+                        <div class="stat-value">{{ stats.projects_count }}</div>
+                    </div>
+                    <div class="icon-container">
+                        <i class="fas fa-project-diagram"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="col-xl-3 col-md-6 mb-4">
-            <div class="card bg-warning text-white h-100">
+            <div class="card card-dashboard bg-warning text-white">
                 <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-uppercase mb-1">JIRA Status</div>
-                            <div class="h3 mb-0">
-                                {% if stats.jira_connected %}
-                                    <span class="text-white">Connected</span>
-                                {% else %}
-                                    <span class="text-white">Disconnected</span>
-                                {% endif %}
-                            </div>
+                    <div class="stat-info">
+                        <div class="text-uppercase mb-1">JIRA Status</div>
+                        <div class="stat-value">
+                            {% if stats.jira_connected %}
+                                <span class="text-white">Connected</span>
+                            {% else %}
+                                <span class="text-white">Disconnected</span>
+                            {% endif %}
                         </div>
-                        <div class="col-auto">
-                            <i class="fab fa-jira fa-2x"></i>
-                        </div>
+                    </div>
+                    <div class="icon-container">
+                        <i class="fab fa-jira"></i>
                     </div>
                 </div>
             </div>
@@ -90,20 +82,20 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Quick Actions</h5>
+                    <h5 class="card-title mb-0">Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ url_for('admin.manage_users') }}" class="btn btn-primary">
+                    <div class="quick-actions">
+                        <a href="{{ url_for('admin.manage_users') }}" class="quick-action-btn btn-primary">
                             <i class="fas fa-user-plus"></i> Manage Users
                         </a>
-                        <a href="{{ url_for('admin.manage_teams') }}" class="btn btn-success">
+                        <a href="{{ url_for('admin.manage_teams') }}" class="quick-action-btn btn-success">
                             <i class="fas fa-users"></i> Manage Teams
                         </a>
-                        <a href="{{ url_for('admin.manage_projects') }}" class="btn btn-info">
+                        <a href="{{ url_for('admin.manage_projects') }}" class="quick-action-btn btn-info">
                             <i class="fas fa-project-diagram"></i> Manage Projects
                         </a>
-                        <a href="{{ url_for('admin.manage_portfolios') }}" class="btn btn-warning">
+                        <a href="{{ url_for('admin.manage_portfolios') }}" class="quick-action-btn btn-warning">
                             <i class="fas fa-folder"></i> Manage Portfolios
                         </a>
                     </div>

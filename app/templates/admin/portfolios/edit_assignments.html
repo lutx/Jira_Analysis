@@ -1,27 +1,34 @@
 {% extends "admin/base_admin.html" %}
 
-{% block title %}Edytuj Przypisania Portfolio{% endblock %}
+{% block title %}Edit Portfolio Assignments{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
+{% block admin_content %}
+<div class="container-fluid">
     <div class="row">
         <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Edit Portfolio Assignments</h1>
+                <a href="{{ url_for('admin.portfolio_assignments') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Assignments
+                </a>
+            </div>
+            
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Edytuj przypisania projektów dla portfolio: {{ portfolio.name }}</h5>
+                    <h5 class="mb-0">Edit project assignments for portfolio: {{ portfolio.name }}</h5>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
-                        {{ form.csrf_token if form }}
+                    <form method="POST" id="assignmentsForm" action="{{ url_for('admin.edit_portfolio_assignments', portfolio_id=portfolio.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="mb-4">
-                            <h6>Wybierz projekty:</h6>
+                            <h6>Select projects:</h6>
                             <div class="table-responsive">
-                                <table class="table table-striped">
+                                <table class="table table-striped" id="projectsTable">
                                     <thead>
                                         <tr>
-                                            <th>Wybierz</th>
-                                            <th>Nazwa</th>
-                                            <th>Klucz JIRA</th>
+                                            <th>Select</th>
+                                            <th>Name</th>
+                                            <th>JIRA Key</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -32,7 +39,7 @@
                                                 <div class="form-check">
                                                     <input type="checkbox" 
                                                            class="form-check-input" 
-                                                           name="project_ids" 
+                                                           name="project_ids[]" 
                                                            value="{{ project.id }}"
                                                            id="project_{{ project.id }}"
                                                            {% if project in portfolio.projects %}checked{% endif %}>
@@ -40,7 +47,13 @@
                                             </td>
                                             <td>{{ project.name }}</td>
                                             <td>{{ project.jira_key }}</td>
-                                            <td>{{ project.status }}</td>
+                                            <td>
+                                                {% if project.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                                {% endif %}
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
@@ -48,8 +61,8 @@
                             </div>
                         </div>
                         <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('admin.portfolio_assignments') }}" class="btn btn-secondary">Anuluj</a>
-                            <button type="submit" class="btn btn-primary">Zapisz zmiany</button>
+                            <a href="{{ url_for('admin.portfolio_assignments') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
                         </div>
                     </form>
                 </div>
@@ -57,4 +70,164 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Log debug information
+    console.log('Edit assignments page loaded');
+    
+    // Debug - Log currently assigned projects
+    const assignedProjects = [];
+    document.querySelectorAll('input[name="project_ids[]"]:checked').forEach(checkbox => {
+        assignedProjects.push(checkbox.value);
+    });
+    console.log('Initially assigned projects:', assignedProjects);
+    
+    // Select all / Deselect all functionality
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'btn btn-sm btn-outline-primary me-2';
+    selectAllBtn.textContent = 'Select All';
+    selectAllBtn.addEventListener('click', function() {
+        document.querySelectorAll('input[name="project_ids[]"]').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+    });
+    
+    const deselectAllBtn = document.createElement('button');
+    deselectAllBtn.type = 'button';
+    deselectAllBtn.className = 'btn btn-sm btn-outline-secondary';
+    deselectAllBtn.textContent = 'Deselect All';
+    deselectAllBtn.addEventListener('click', function() {
+        document.querySelectorAll('input[name="project_ids[]"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    });
+    
+    // Add buttons to the form
+    const form = document.getElementById('assignmentsForm');
+    if (form) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'd-flex mb-3';
+        buttonContainer.appendChild(selectAllBtn);
+        buttonContainer.appendChild(deselectAllBtn);
+        
+        const heading = form.querySelector('h6');
+        if (heading) {
+            heading.parentNode.insertBefore(buttonContainer, heading.nextSibling);
+        }
+        
+        // Form submission handler
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            console.log('Form submission started');
+            
+            // Get all checked project IDs
+            const selectedProjects = [];
+            document.querySelectorAll('input[name="project_ids[]"]:checked').forEach(checkbox => {
+                selectedProjects.push(checkbox.value);
+            });
+            console.log('Selected projects:', selectedProjects);
+            
+            // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.textContent;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+            submitBtn.disabled = true;
+            
+            // Use standard form submission approach
+            const formData = new FormData(form);
+            
+            // Remove any existing project_ids[] entries and re-add them
+            // This ensures we handle the case when none are selected
+            for (const pair of formData.entries()) {
+                if (pair[0] === 'project_ids[]') {
+                    formData.delete(pair[0]);
+                }
+            }
+            
+            // Add selected projects
+            selectedProjects.forEach(projectId => {
+                formData.append('project_ids[]', projectId);
+            });
+            
+            // Send AJAX request
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                // Try to parse as JSON but fallback to text if needed
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => {
+                        return { 
+                            ok: response.ok, 
+                            data: data,
+                            status: response.status
+                        };
+                    });
+                } else {
+                    return response.text().then(text => {
+                        return { 
+                            ok: response.ok, 
+                            text: text,
+                            status: response.status
+                        };
+                    });
+                }
+            })
+            .then(result => {
+                console.log('Response:', result);
+                
+                // Reset button state
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                
+                if (result.ok) {
+                    // Show success message for JSON response
+                    if (result.data && result.data.status === 'success') {
+                        alert(result.data.message || 'Assignments updated successfully');
+                    } else {
+                        alert('Assignments updated successfully');
+                    }
+                    
+                    // Redirect back to portfolio assignments page
+                    window.location.href = '{{ url_for("admin.portfolio_assignments") }}';
+                } else {
+                    // Handle error
+                    let errorMessage = 'An error occurred while saving assignments';
+                    
+                    if (result.data && result.data.message) {
+                        errorMessage = result.data.message;
+                    } else if (result.text) {
+                        // Try to extract error message from HTML response
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = result.text;
+                        const flashMessages = tempDiv.querySelectorAll('.alert');
+                        if (flashMessages.length > 0) {
+                            errorMessage = flashMessages[0].textContent.trim();
+                        }
+                    }
+                    
+                    alert(errorMessage);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                
+                // Reset button state
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                
+                alert('An error occurred while saving assignments. Please try again.');
+            });
+        });
+    }
+});
+</script>
 {% endblock %} 

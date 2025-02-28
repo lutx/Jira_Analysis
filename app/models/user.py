@@ -395,3 +395,13 @@ class User(UserMixin, db.Model):
         except Exception as e:
             logger.error(f"Error getting worklog count for user {self.username}: {str(e)}")
             return 0 
+
+    @property
+    def team(self):
+        """Get user's current team."""
+        try:
+            active_membership = next((tm for tm in self.team_members if tm.is_active), None)
+            return active_membership.team if active_membership else None
+        except Exception as e:
+            logger.error(f"Error getting team for user {self.username}: {str(e)}")
+            return None 

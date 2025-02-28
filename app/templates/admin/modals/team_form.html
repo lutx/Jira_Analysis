@@ -14,11 +14,18 @@
     {{ form.description(class="form-control") }}
 </div>
 <div class="mb-3">
-    {{ form.leader.label(class="form-label") }}
-    {{ form.leader(class="form-select select2") }}
+    {{ form.leader_id.label(class="form-label") }}
+    {{ form.leader_id(class="form-select select2") }}
+    <div class="form-text">Select a team leader who will manage this team.</div>
+</div>
+<div class="mb-3">
+    {{ form.portfolio_id.label(class="form-label") }}
+    {{ form.portfolio_id(class="form-select select2") }}
+    <div class="form-text">Select a portfolio this team belongs to (optional).</div>
 </div>
 <div class="mb-3">
     {{ form.members.label(class="form-label") }}
     {{ form.members(class="form-select select2", multiple=true) }}
+    <div class="form-text">Select team members. The team leader will be automatically added as a member.</div>
 </div>
 {% endblock %} 

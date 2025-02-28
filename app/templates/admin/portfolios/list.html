@@ -59,30 +59,63 @@
     </div>
 </div>
 
-<!-- Portfolio Modal -->
-<div class="modal fade" id="portfolioModal" tabindex="-1">
+<!-- Portfolio Modal - Updated to use standard Bootstrap 5 modal -->
+<div class="modal fade" id="portfolioModal" tabindex="-1" aria-labelledby="portfolioModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add Portfolio</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="portfolioModalLabel">Add Portfolio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="portfolioForm" method="POST" action="{{ url_for('admin.create_portfolio') }}">
-                    {{ form.csrf_token if form }}
+                <form id="portfolioForm" method="POST" action="{{ url_for('admin.manage_portfolios') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label class="form-label">Name</label>
-                        <input type="text" class="form-control" name="name" required>
+                        <label for="name" class="form-label">Nazwa</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="invalid-feedback">Please enter a portfolio name.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" name="description" rows="3"></textarea>
+                        <label for="description" class="form-label">Opis</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="projects" class="form-label">Projekty</label>
+                        <select class="form-select" id="projects" name="projects" multiple size="8">
+                            {% for choice in form.projects.choices %}
+                            <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Hold Ctrl (or Cmd on Mac) to select multiple projects.</small>
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Portfolio</button>
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePortfolioModal" tabindex="-1" aria-labelledby="deletePortfolioModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePortfolioModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the portfolio "<span id="portfolioNameToDelete"></span>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="portfolioForm" class="btn btn-primary">Save</button>
+                <form id="deletePortfolioForm" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
             </div>
         </div>
     </div>
@@ -93,40 +126,97 @@
 {{ super() }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Log modal debugging info
+    console.log("Portfolio management page loaded");
+    
     // Initialize DataTable
-    const portfoliosTable = $('#portfoliosTable').DataTable({
-        pageLength: 10,
-        order: [[0, 'asc']]
-    });
+    try {
+        const portfoliosTable = $('#portfoliosTable').DataTable({
+            pageLength: 10,
+            order: [[0, 'asc']]
+        });
+        console.log("DataTable initialized successfully");
+    } catch (e) {
+        console.error("Error initializing DataTable:", e);
+    }
 
-    // Handle portfolio deletion
-    document.querySelectorAll('.delete-portfolio').forEach(button => {
+    // Handle delete button clicks
+    const deleteButtons = document.querySelectorAll('.delete-portfolio');
+    deleteButtons.forEach(button => {
         button.addEventListener('click', function() {
-            const portfolioId = this.dataset.portfolioId;
-            const portfolioName = this.dataset.portfolioName;
+            const portfolioId = this.getAttribute('data-portfolio-id');
+            const portfolioName = this.getAttribute('data-portfolio-name');
             
-            if (confirm(`Are you sure you want to delete portfolio "${portfolioName}"?`)) {
-                fetch(`/admin/portfolios/${portfolioId}/delete`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        document.getElementById(`portfolio-${portfolioId}`).remove();
-                        alert('Portfolio deleted successfully');
-                    } else {
-                        alert('Error deleting portfolio');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error deleting portfolio');
-                });
-            }
+            // Set the portfolio name in the confirmation modal
+            document.getElementById('portfolioNameToDelete').textContent = portfolioName;
+            
+            // Set the form action
+            const deleteForm = document.getElementById('deletePortfolioForm');
+            deleteForm.action = "{{ url_for('admin.delete_portfolio', portfolio_id=0) }}".replace('0', portfolioId);
+            
+            // Show the confirmation modal
+            const deleteModal = new bootstrap.Modal(document.getElementById('deletePortfolioModal'));
+            deleteModal.show();
+            console.log("Delete modal shown for portfolio ID:", portfolioId);
         });
     });
+
+    // Explicitly initialize the add portfolio modal
+    const portfolioModal = document.getElementById('portfolioModal');
+    if (portfolioModal) {
+        const bsPortfolioModal = new bootstrap.Modal(portfolioModal);
+        console.log("Portfolio modal initialized");
+        
+        // Add click handler for the add portfolio button
+        const addPortfolioBtn = document.querySelector('[data-bs-target="#portfolioModal"]');
+        if (addPortfolioBtn) {
+            addPortfolioBtn.addEventListener('click', function() {
+                bsPortfolioModal.show();
+                console.log("Portfolio modal shown via JS");
+            });
+        }
+    }
+
+    // Form validation
+    const portfolioForm = document.getElementById('portfolioForm');
+    if (portfolioForm) {
+        portfolioForm.addEventListener('submit', function(event) {
+            let isValid = true;
+            console.log("Form submission attempted");
+            
+            // Validate name field
+            const nameField = document.getElementById('name');
+            if (!nameField.value.trim()) {
+                nameField.classList.add('is-invalid');
+                isValid = false;
+                console.log("Name validation failed");
+            } else {
+                nameField.classList.remove('is-invalid');
+            }
+            
+            if (!isValid) {
+                event.preventDefault();
+                console.log("Form validation failed, preventing submission");
+            } else {
+                console.log("Form is valid, submitting...");
+            }
+        });
+
+        // Reset form when modal is closed
+        portfolioModal.addEventListener('hidden.bs.modal', function() {
+            portfolioForm.reset();
+            document.getElementById('name').classList.remove('is-invalid');
+            console.log("Form reset after modal closed");
+        });
+        
+        // Fix for pointer events - ensure the modal is interactive
+        portfolioModal.addEventListener('shown.bs.modal', function() {
+            // Force pointer-events to auto for modal content
+            document.querySelector('.modal-content').style.pointerEvents = 'auto';
+            document.querySelector('.modal-dialog').style.pointerEvents = 'auto';
+            console.log("Modal shown event - fixed pointer events");
+        });
+    }
 });
 </script>
 {% endblock %} 

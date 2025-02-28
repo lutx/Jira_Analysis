@@ -10,7 +10,7 @@ from flask_wtf import FlaskForm
 import logging
 from flask_login import login_required, current_user
 from app.decorators import admin_required
-from app.models import Project
+from app.models import Project, Report, ReportResult
 from app.forms.report_forms import (
     RoleDistributionForm, 
     ShadowWorkForm, 
@@ -18,6 +18,9 @@ from app.forms.report_forms import (
 )
 from app.models.portfolio import Portfolio
 from app.models.team import Team
+from app.extensions import db
+from app.utils.auth import requires_auth, requires_admin
+from typing import Dict
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 logger = logging.getLogger(__name__)
@@ -40,7 +43,8 @@ def create_pdf_report(report_data):
 @login_required
 def index():
     """Lista dostępnych raportów."""
-    return render_template('reports/index.html')
+    reports = Report.query.filter_by(is_active=True).all()
+    return render_template('reports/index.html', reports=reports)
 
 @reports_bp.route('/workload')
 @login_required
@@ -297,4 +301,184 @@ def export_activity_report():
 @login_required
 def export_report():
     """Export report view."""
-    return render_template('reports/export.html') 
+    return render_template('reports/export.html')
+
+@reports_bp.route('/api/reports', methods=['GET'])
+@requires_auth
+def get_reports():
+    """Get all reports."""
+    try:
+        reports = Report.query.filter_by(is_active=True).all()
+        return jsonify({
+            'status': 'success',
+            'data': [r.to_dict() for r in reports]
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting reports: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@reports_bp.route('/api/reports', methods=['POST'])
+@requires_admin
+def create_report():
+    """Create a new report."""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'report_type']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Missing required field: {field}'
+                }), 400
+        
+        report = Report(
+            name=data['name'],
+            description=data.get('description'),
+            report_type=data['report_type'],
+            schedule=data.get('schedule'),
+            created_by_id=request.user.id
+        )
+        
+        if 'parameters' in data:
+            report.set_parameters(data['parameters'])
+        
+        db.session.add(report)
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Report created successfully',
+            'data': report.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error creating report: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@reports_bp.route('/api/reports/<int:report_id>', methods=['GET'])
+@requires_auth
+def get_report(report_id: int):
+    """Get report details and latest results."""
+    try:
+        report = Report.query.get_or_404(report_id)
+        latest_result = report.results.order_by(ReportResult.execution_date.desc()).first()
+        
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'report': report.to_dict(),
+                'latest_result': latest_result.to_dict() if latest_result else None
+            }
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting report: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@reports_bp.route('/api/reports/<int:report_id>', methods=['PUT'])
+@requires_admin
+def update_report(report_id: int):
+    """Update an existing report."""
+    try:
+        report = Report.query.get_or_404(report_id)
+        data = request.get_json()
+        
+        # Update fields
+        if 'name' in data:
+            report.name = data['name']
+        if 'description' in data:
+            report.description = data['description']
+        if 'report_type' in data:
+            report.report_type = data['report_type']
+        if 'schedule' in data:
+            report.schedule = data['schedule']
+        if 'parameters' in data:
+            report.set_parameters(data['parameters'])
+        if 'is_active' in data:
+            report.is_active = data['is_active']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Report updated successfully',
+            'data': report.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating report: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@reports_bp.route('/api/reports/<int:report_id>/run', methods=['POST'])
+@requires_auth
+def run_report(report_id: int):
+    """Run a report manually."""
+    try:
+        report = Report.query.get_or_404(report_id)
+        result = report.run()
+        
+        if result:
+            return jsonify({
+                'status': 'success',
+                'message': 'Report executed successfully',
+                'data': result.to_dict()
+            }), 200
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to execute report'
+            }), 500
+    except Exception as e:
+        logger.error(f"Error running report: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@reports_bp.route('/api/reports/<int:report_id>/results', methods=['GET'])
+@requires_auth
+def get_report_results(report_id: int):
+    """Get all results for a specific report."""
+    try:
+        report = Report.query.get_or_404(report_id)
+        results = report.results.order_by(ReportResult.execution_date.desc()).all()
+        
+        return jsonify({
+            'status': 'success',
+            'data': [r.to_dict() for r in results]
+        }), 200
+    except Exception as e:
+        logger.error(f"Error getting report results: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@reports_bp.route('/api/reports/types', methods=['GET'])
+@requires_auth
+def get_report_types():
+    """Get available report types and their parameters."""
+    return jsonify({
+        'status': 'success',
+        'data': {
+            'leave_usage': {
+                'name': 'Leave Usage Report',
+                'parameters': ['start_date', 'end_date', 'team_id']
+            },
+            'team_availability': {
+                'name': 'Team Availability Report',
+                'parameters': ['start_date', 'end_date', 'team_id']
+            },
+            'cost_tracking': {
+                'name': 'Cost Tracking Report',
+                'parameters': ['start_date', 'end_date', 'project_id']
+            },
+            'project_allocation': {
+                'name': 'Project Allocation Report',
+                'parameters': ['start_date', 'end_date', 'portfolio_id']
+            }
+        }
+    }), 200
+
+@reports_bp.route('/reports/<int:report_id>')
+@requires_auth
+def report_details(report_id: int):
+    """Render report details page."""
+    report = Report.query.get_or_404(report_id)
+    latest_result = report.results.order_by(ReportResult.execution_date.desc()).first()
+    return render_template('reports/details.html', report=report, latest_result=latest_result) 
